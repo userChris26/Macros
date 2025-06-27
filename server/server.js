@@ -4,8 +4,8 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 require('dotenv').config();
-const uri = process.env.MONGODB_URI;
 
+const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -17,10 +17,15 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
+    console.log('Connecting to MongoDB');
     await client.connect();
+    console.log('Connected to MongoDB');
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
+    throw error;
   } finally {
     // Ensures that the client will close when you finish/error
 //    await client.close();
