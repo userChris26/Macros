@@ -28,9 +28,9 @@ function Login()
 
             try
             {
-                console.log("AAAAA");
+
                 var ud = decoded;
-                console.log(ud);
+
                 var userId = ud.iat;
                 var firstName = ud.firstName;
                 var lastName = ud.lastName;
