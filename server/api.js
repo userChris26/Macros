@@ -3,6 +3,8 @@ require('mongodb');
 
 exports.setApp = function ( app, client )
 {
+    const User = require("./models/user.js");
+    const Card = require("./models/card.js");
 
     app.post('/api/register', async (req, res, next) =>
     {
@@ -11,11 +13,8 @@ exports.setApp = function ( app, client )
 
         const { userFirstName, userLastName, userEmail, userLogin, userPassword } = req.body;
         var error = '';
-
-        const db = client.db('COP4331Cards');
-        const results = await
-            db.collection('users').find({$or: [{login:userLogin}, {email:userEmail}]}).toArray();
-
+        
+        const results = await User.find({ $or: [{login: userLogin}, {email: userEmail}] });
         try
         {
             if ( results.length > 0 )
@@ -24,8 +23,10 @@ exports.setApp = function ( app, client )
             }
             else
             {
-                const newUser = {email: userEmail, login: userLogin, password: userPassword, firstName:userFirstName, lastName:userLastName};
-                const result = db.collection('users').insertOne(newUser);
+                const newUser = new User({ email: userEmail, 
+                    login: userLogin, password: userPassword,
+                    firstName: userFirstName, lastName: userLastName });
+                newUser.save();
             }
         }
         catch(e)
@@ -46,10 +47,9 @@ exports.setApp = function ( app, client )
 
         const { userLogin, userPassword } = req.body;
 
-        const db = client.db('COP4331Cards');
+        //const db = client.db('COP4331Cards');
 
-        const results = await
-        db.collection('users').find({login:userLogin,password:userPassword}).toArray();
+        const results = await User.find({login: userLogin, password: userPassword});
 
         var userId = -1;
         var userFirstName = '';
@@ -86,7 +86,7 @@ exports.setApp = function ( app, client )
         // incoming: userId, userFirstName, userLastName, userEmail, userLogin, userJwt
         // outgoing: error
 
-        var token = require('.createJWT.js');
+        var token = require('./createJWT.js');
         
         const { userId, userFirstName, userLastName, userEmail, userLogin, userJwt } = req.body;
         
@@ -94,7 +94,7 @@ exports.setApp = function ( app, client )
         {
             if(token.isExpired(userJwt))
             {
-                var ret = {error:'The JWT is no longer valid', userJwt: ''};
+                var ret = {error: 'The JWT is no longer valid', userJwt: ''};
                 res.status(200).json(ret);
                 return;
             }
@@ -108,8 +108,7 @@ exports.setApp = function ( app, client )
 
         try
         {
-            const db = client.db('COP4331Cards');
-            const result = await db.collection('users').updateOne(
+            result = await User.updateOne(
                 {_id:ObjectId.createFromHexString(userId)},
                 {
                     $set: {email: userEmail, login: userLogin,
@@ -161,13 +160,12 @@ exports.setApp = function ( app, client )
             console.log(e.message);
         }
 
-        const newCard = {user:userId,name:card};
+        const newCard = new Card({user:userId, name:card});
         var error = '';
 
         try
         {
-            const db = client.db('COP4331Cards');
-            const result = db.collection('cards').insertOne(newCard);
+            newCard.save();
         }
         catch(e)
         {
@@ -215,9 +213,8 @@ exports.setApp = function ( app, client )
 
         var _search = search.trim();
 
-        const db = client.db('COP4331Cards');
-        const results = await db.collection('cards').find({"name":{$regex:_search+'.*', $options:'i'}}).toArray();
-
+        const results = await Card.find({ "name": {$regex: _search+'.*', $options: 'i'} })
+        
         var _ret = [];
         for( var i = 0; i < results.length; i++ )
         {

@@ -12,7 +12,7 @@ function CardUI()
     
     let _ud : any = localStorage.getItem('user_data');
     let ud = JSON.parse( _ud );
-    let userId : string = ud.id;
+    let userId : string = ud.userId;
     
     async function addCard(event:any) : Promise<void>
     {
