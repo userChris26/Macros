@@ -1,30 +1,30 @@
 import React, { useState } from 'react';
-import buildPath from './Path';
+import { buildPath }  from './Path';
+import { retrieveToken, storeToken } from '../tokenStorage';
 
 function CardUI()
-{
-    let _ud : any = localStorage.getItem('user_data');
-    let ud = JSON.parse( _ud );
-    let userId : string = ud.id;
-    
+{   
     const [message,setMessage] = useState('');
     const [searchResults,setResults] = useState('');
     const [cardList,setCardList] = useState('');
     const [search,setSearchValue] = React.useState('');
     const [card,setCardNameValue] = React.useState('');
     
-    async function addCard(e:any) : Promise<void>
+    let _ud : any = localStorage.getItem('user_data');
+    let ud = JSON.parse( _ud );
+    let userId : string = ud.id;
+    
+    async function addCard(event:any) : Promise<void>
     {
-        e.preventDefault();
-        let obj = {userId:userId,card:card};
+        event.preventDefault();
+
+        let obj = {userId:userId, card:card, userJwt:retrieveToken()};
         let js = JSON.stringify(obj);
 
         try
         {
-            const response = await
-                fetch(buildPath('api/addcard'),
-                {method:'POST',body:js,headers:{'Content-Type':
-                'application/json'}});
+            const response = await fetch(buildPath('api/addcard'),
+            {method:'POST', body:js, headers:{'Content-Type':'application/json'}});
 
             let txt = await response.text();
             let res = JSON.parse(txt);
@@ -36,6 +36,7 @@ function CardUI()
             else
             {
                 setMessage('Card has been added');
+                storeToken(res.userJwt);
             }
         }
         catch(error:any)
@@ -44,18 +45,17 @@ function CardUI()
         }
     };
 
-    async function searchCard(e:any) : Promise<void>
+    async function searchCard(event:any) : Promise<void>
     {
-        e.preventDefault();
-        let obj = {userId:userId,search:search};
+        event.preventDefault();
+
+        let obj = {userId:userId, search:search, userJwt:retrieveToken()};
         let js = JSON.stringify(obj);
         
         try
         {
-            const response = await
-                fetch(buildPath('api/searchcards'),
-                {method:'POST',body:js,headers:{'Content-Type':
-                'application/json'}});
+            const response = await fetch(buildPath('api/searchcards'),
+            {method:'POST', body:js, headers:{'Content-Type':'application/json'}});
 
             let txt = await response.text();
             let res = JSON.parse(txt);
@@ -69,7 +69,9 @@ function CardUI()
                     resultText += ', ';
                 }
             }
+
             setResults('Card(s) have been retrieved');
+            storeToken( res.userJwt );
             setCardList(resultText);
         }
         catch(error:any)
@@ -79,14 +81,14 @@ function CardUI()
         }
     };
 
-    function handleSearchTextChange( e: any ) : void
+    function handleSearchTextChange( event: any ) : void
     {
-        setSearchValue( e.target.value );
+        setSearchValue( event.target.value );
     }
 
-    function handleCardTextChange( e: any ) : void
+    function handleCardTextChange( event: any ) : void
     {
-        setCardNameValue( e.target.value );
+        setCardNameValue( event.target.value );
     }
 
     return(
@@ -105,7 +107,6 @@ function CardUI()
         <span id="cardAddResult">{message}</span>
     </div>
     );
-
-}
+};
 
 export default CardUI;
