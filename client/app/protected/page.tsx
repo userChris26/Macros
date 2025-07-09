@@ -27,13 +27,13 @@ export default function ProtectedPage() {
       <div className="w-full">
         <div className="bg-accent text-sm p-3 px-5 rounded-md text-foreground flex gap-3 items-center">
           <InfoIcon size="16" strokeWidth={2} />
-          Welcome to your protected dashboard! You're successfully logged in.
+          Welcome to your protected dashboard! You&apos;re successfully logged in.
         </div>
       </div>
       <div className="flex flex-col gap-8">
         <section>
           <h2 className="font-bold text-2xl mb-4">Your Dashboard</h2>
-          <p>This is where you'll see your macros tracking and food entries.</p>
+          <p>This is where you&apos;ll see your macros tracking and food entries.</p>
         </section>
       </div>
     </div>
