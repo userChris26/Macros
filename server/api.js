@@ -32,6 +32,7 @@ exports.setApp = function ( app, client )
 {
     const User = require("./models/user.js");
     const Card = require("./models/card.js");
+    const FoodEntry = require("./models/foodEntry.js");  // Add this line
 
     app.post('/api/register', async (req, res, next) =>
     {
@@ -346,12 +347,8 @@ exports.setApp = function ( app, client )
                 });
             }
 
-            const db = client.db('COP4331Cards');
-            const foodEntries = db.collection("FoodEntries");
-            console.log('Database collection accessed successfully');
-            
-            const newFoodEntry = {
-                userId: parseInt(userId),
+            const newFoodEntry = new FoodEntry({
+                userId: userId,
                 fdcId: parseInt(fdcId),
                 foodName: foodData.description || 'Unknown Food',
                 brandOwner: foodData.brandOwner || '',
@@ -368,17 +365,17 @@ exports.setApp = function ( app, client )
                 },
                 dateAdded: date || new Date().toISOString().split('T')[0],
                 timestamp: new Date().toISOString()
-            };
+            });
             
             console.log('New food entry to insert:', JSON.stringify(newFoodEntry, null, 2));
             
-            const result = await foodEntries.insertOne(newFoodEntry);
-            console.log('Food entry added successfully:', result.insertedId);
+            const result = await newFoodEntry.save();
+            console.log('Food entry added successfully:', result._id);
             
             res.json({
                 success: true,
                 message: 'Food has been added to your diary',
-                entryId: result.insertedId,
+                entryId: result._id,
                 entry: newFoodEntry
             });
             
@@ -404,16 +401,14 @@ exports.setApp = function ( app, client )
         }
 
         try {
-            const db = client.db('COP4331Cards');
-            const foodEntries = db.collection("FoodEntries");
-            const query = { userId: parseInt(userId) };
+            const query = { userId: userId };  // No need to parseInt since we store it as string
             
             // If date is provided, filter by date
             if (date) {
                 query.dateAdded = date;
             }
             
-            const entries = await foodEntries.find(query).toArray();
+            const entries = await FoodEntry.find(query);
             console.log('Found', entries.length, 'food entries for user', userId, 'on date', date);
             
             // Calculate total calories
@@ -447,12 +442,9 @@ exports.setApp = function ( app, client )
         }
 
         try {
-            const db = client.db('COP4331Cards');
-            const { ObjectId } = require('mongodb');
-            const foodEntries = db.collection("FoodEntries");
-            const result = await foodEntries.deleteOne({ 
-                _id: new ObjectId(entryId),
-                userId: parseInt(userId) // Also check userId for security
+            const result = await FoodEntry.deleteOne({ 
+                _id: entryId,
+                userId: userId // Also check userId for security
             });
             
             if (result.deletedCount === 1) {
