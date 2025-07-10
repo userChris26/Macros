@@ -43,10 +43,15 @@ export function LoginForm({
         return;
       }
       
-      // The cookie is now set by the server as an HTTP-only cookie
-      // We don't need to set it here anymore
+      // Store the JWT token as a cookie
+      Cookies.set('jwtToken', response.accessToken || '', {
+        expires: 7, // 7 days
+        path: '/',
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production'
+      });
       
-      console.log('Login successful, redirecting to /protected');
+      console.log('Stored auth data, redirecting to /protected');
       // Redirect to protected route
       router.push("/protected");
       router.refresh(); // Force a refresh to update the UI

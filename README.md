@@ -79,11 +79,6 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 USDA_API_KEY=your_usda_api_key
 ```
 
-### Frontend (.env)
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000
-```
-
 ## Getting Started
 
 1. Clone the repository
