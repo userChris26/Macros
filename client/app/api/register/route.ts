@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
+import { getApiUrl } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Use environment variable for API URL
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    const response = await fetch(`${apiUrl}/api/register`, {
+    // Forward the request to your Express backend
+    const response = await fetch(`${getApiUrl()}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
