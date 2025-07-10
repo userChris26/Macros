@@ -4,8 +4,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Forward the request to your Express backend
-    const response = await fetch('http://localhost:5000/api/register', {
+    // Use environment variable for API URL
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const response = await fetch(`${apiUrl}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
