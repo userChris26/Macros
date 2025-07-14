@@ -54,7 +54,7 @@ exports.setApp = function ( app, client )
                 const newUser = new User({ email: userEmail, 
                     login: userLogin, password: userPassword,
                     firstName: userFirstName, lastName: userLastName });
-                newUser.save();
+                await newUser.save();
             }
         }
         catch(e)
@@ -193,7 +193,7 @@ exports.setApp = function ( app, client )
 
         try
         {
-            newCard.save();
+            await newCard.save();
         }
         catch(e)
         {

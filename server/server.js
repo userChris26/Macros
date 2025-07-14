@@ -4,6 +4,10 @@ const cors = require('cors');
 
 require('dotenv').config();
 
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+// Connect to MongoDB
 const uri = process.env.MONGODB_URI;
 const mongoose = require("mongoose");
 mongoose.connect(uri)
@@ -12,7 +16,7 @@ mongoose.connect(uri)
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json()); // Changed from bodyParser.tsxon()
+app.use(bodyParser.json());
 
 app.use((req, res, next) =>
 {
