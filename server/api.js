@@ -303,42 +303,23 @@ exports.setApp = function( app, client )
 
 	// Unfollow a user
 	app.delete('/api/follow', async (req, res) => {
-		// var token = require('./createJWT.js');
-		var ret;
-		var error = '';
-
-		try {
-			const { followerId, followingId, userJwt } = req.body;
-
-			// try {
-			// 	if (token.isExpired(userJwt)) {
-			// 		ret.status(200).json({error: 'The JWT is no longer valid', userJwt: ''});
-			// 		return;
-			// 	}
-			// }
-			// catch(e) {
-			// 	console.log(e.message);
-			// }
-
-			await Network.findOneAndDelete({ followerId, followingId });
-
-			// var refreshedToken = null;
-			// try
-			// {
-			// 	refreshedToken = token.refresh(userJwt);
-			// }
-			// catch(e)
-			// {
-			// 	console.log(e.message);
-			// }
-
-			ret = { error: error, /*userJwt: refreshedToken*/ };
-		} catch (err) {
-			console.error(err);
-			res.status(500).json({ error: 'Could not unfollow user' });
+	try {
+		const { followerId, followingId } = req.body;
+		// Check if the connection exists before trying to delete
+		const existing = await Network.findOne({ followerId, followingId });
+		if (!existing) {
+			return res.json({ error: 'Not following this user' });
 		}
-
-		res.status(200).json(ret);
+		// Check if trying to unfollow self
+		if (followerId === followingId) {
+			return res.json({ error: 'Cannot unfollow yourself' });
+		}
+		await Network.findOneAndDelete({ followerId, followingId });
+		res.json({ error: '' });
+  	} catch (err) {
+    	console.error(err);
+    	res.status(500).json({ error: 'Could not unfollow user' });
+  	}
 	});
 
 	// Get followers for a user
