@@ -1,37 +1,38 @@
 # ROADMAP
 
-## ✅ COMPLETED
-- Basic authentication with JWT
-- USDA API integration for food search
-- Food entry creation and management
-- Following/followers system implementation
-- User search functionality
-- Profile page with user info
-- Basic stats display (following/followers)
-- Shadcn/UI component integration
-- Dark/light mode support
+## TODAY
+- Forget Password
+- Confirm Email
 
-### Live Testing Begin
-- Allow users to pick which meal they want their food to go in (bldsnack,water)
-- Post a picture of a meal / food item
-- make dummy accounts
+## DISCUSS
+- When start unit testing?
+- When get github actions setup?
+- When do powerpoint?
+- Table to allow adding meals
+- Start taking pictures and experimenting
 
-### Social Feed Enhancement
-- Design and implement social feed layout
-- Show followed users' food entries
-- Add likes and comments functionality
-- Implement real-time updates
-- Add meal photos display
-- Sort foods by meals in the feed
+## ESSENTIAL
+- Cloudinary profile picture
+- Picture per meal and add food per meal
+- Portion sizes
+- Do not show self in following (will break it)
+- Make dummy accounts as well
 
-### Profile Enhancements
-- Set up Cloudinary integration
-- Implement profile picture upload/update
-- Add profile picture preview
-- Implement image cropping/resizing
-- Add profile completion percentage
+## LAYOUT
+- Update Social Aspect (make look good)
+- Stats and graph by user Profile as well
+- Add food into meal section as well in the add food category
 
-### Testing Implementation
+## BACKEND
+- Email verification system
+- Password recovery flow
+- Password hashing implementation
+- API rate limiting
+- Error handling improvements
+- API documentation
+
+## TESTING
+- Ensure all routes work
 - Set up testing framework (Jest + React Testing Library)
 - Write unit tests for:
   - Authentication flows
@@ -42,7 +43,7 @@
 - Set up GitHub Actions for CI/CD
 - Add test coverage reporting
 
-### Flutter App Development
+## MOBILE
 - Set up Flutter development environment
 - Create app architecture
 - Implement authentication
@@ -52,102 +53,43 @@
   - Profile management
 - Ensure cross-platform compatibility
 
-### User Experience Improvements
+## DETAILS
+- Social calorie tracker everywhere
+- Make Hero look better (mobile app visuals there also)
+- Add profile completion percentage (upload / update)
+- Don't say can't find anything before they search
+- About / help page for users
+
+## ACCESSIBILITY
+- lighthouse
+- light and dark mode
+- password complexity
+- mobile / responsiveness
 - Mobile responsiveness optimization
 - Add mobile navigation menu
 - Improve hero section design
 - Add loading states and animations
 - Implement error boundaries
 - Add tooltips and help text
+- Keyboard navigation
 
-### Backend Enhancements
-- Email verification system
-- Password recovery flow
-- Password hashing implementation
-- API rate limiting
-- Error handling improvements
-- API documentation
+## DEPLOYMENT / PRESENTATION
+- Add sequence diagrams
+- Create Gantt chart
+- Prepare demo slides
+- Record demo video
+- Full end to end test
+- Github sharp / branding up
+- Powerpoint good and rehearsed (mobile app visuals there also)
+- Swagger up and tested as well
+- Ensure hero looks good
 
-### Feature Expansion
+## MORE TIME
+- Routine meals / same pictures
+- Likes and comments
 - Macro tracking goals
 - Routine meals functionality
 - Advanced statistics
 - Progress tracking
 - Export functionality
 - Meal planning
-
-### Security & Performance
-- Security audit
-- Performance optimization
-- Caching implementation
-- Load testing
-- Error tracking setup
-- Analytics integration
-
-### Documentation & Presentation
-- Update README.md
-- Create transparent banner
-- Add sequence diagrams
-- Create Gantt chart
-- Prepare demo slides
-- Record demo vide
-
-### Code Quality
-- Code refactoring
-- File organization
-- Documentation updates
-- Performance monitoring
-- Security updates
-- Dependency management
-
-### Testing & Monitoring
-- End-to-end testing
-- Performance testing
-- Accessibility testing
-- Error monitoring
-- Usage analytics
-- User feedback collection
-
-### Accessibility
-- Lighthouse audits
-- Keyboard navigation
-- Screen reader support
-- Color contrast checking
-- ARIA labels
-- Focus management
-
-## 📚 DOCUMENTATION NEEDS
-
-### Technical Documentation
-- API documentation
-- Component documentation
-- Testing guidelines
-- Deployment guide
-- Contributing guide
-- Security policy
-
-### User Documentation
-- User guide
-- FAQ section
-- Feature tutorials
-- Troubleshooting guide
-- Privacy policy
-- Terms of service
-
-## 🎓 LEARNING OUTCOMES
-- JWT implementation
-- SendGrid integration
-- USDA API integration
-- Cloudinary implementation
-- Flutter development
-- Testing methodologies
-- CI/CD practices
-- Social features implementation
-
-## Presentation
-- Powerpoint
-- Make hero look good
-- 'social calorie tracker' everywhere
-- Github presentation
-- Video demo?
-- Theme and for app as well
