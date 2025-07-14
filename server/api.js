@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { cloudinary, upload } = require('./config/cloudinary');
 const sgMail = require('@sendgrid/mail');
+const FoodEntry = require('./models/FoodEntry');
 
 //Define schemas for social network features
 const UserSchema = new mongoose.Schema({
@@ -110,42 +111,41 @@ exports.setApp = function( app, client )
 		res.status(200).json(ret);
 	});
 
-	app.post('/api/login', async (req, res) =>
-		{
-			// incoming: email, password
-			// outgoing: id, firstName, lastName, error
+	app.post('/api/login', async (req, res) => {
+		// incoming: email, password
+		// outgoing: accessToken, userId, firstName, lastName, error
 
-			const { userEmail, userPassword } = req.body;
-			var ret;
-					
-			const result = await User.findOne({ email:userEmail, password:userPassword });
-			try
-			{
-				if (!result)
-				{
-					ret = { error: "Login/Password incorrect" };
-				}
-				else
-				{
-					const token = require("./createJWT.js");
+		const { userEmail, userPassword } = req.body;
+		var ret;
+				
+		const result = await User.findOne({ email:userEmail, password:userPassword });
+		try {
+			if (!result) {
+				ret = { error: "Login/Password incorrect" };
+			} else {
+				const token = require("./createJWT.js");
+				const tokenData = token.createToken({
+					id: result._id,
+					firstName: result.firstName,
+					lastName: result.lastName,
+					profilePic: result.profilePic,
+					bio: result.bio
+				});
 
-					ret = token.createToken(
-					{
-						id: result._id,
-						firstName: result.firstName,
-						lastName: result.lastName,
-						profilePic: result.profilePic,
-						bio: result.bio
-					});
-				}
+				ret = {
+					accessToken: tokenData.accessToken,
+					userId: result._id.toString(),
+					firstName: result.firstName,
+					lastName: result.lastName,
+					error: ''
+				};
 			}
-			catch(e)
-			{
+		} catch(e) {
 			ret = { error: e.message };
-			}
-			
-			res.status(200).json(ret);
-		});
+		}
+		
+		res.status(200).json(ret);
+	});
 
 	app.post('/api/updateaccount', async (req, res) =>
 		{

@@ -1,15 +1,29 @@
 # ROADMAP
 
 ## ASAP
-- Ask for table schema ensurance / postman
-- rid supabase / tutorial
-- social nutrition tracker everywhere
 - how to do unit tests with every push
 - Ensure all API Routes work
 - When put in unit tests here
-- When is postman up and working?
 - make food date be iso not string if possible
 - Start taking pictures of food and actually using (experiment for a week!)
+
+focus on the Network, User settings, and Food queries
+
+Food Log Features:
+Create the food entry form with USDA API integration
+Add a calendar view for historical entries
+Implement macro tracking goals
+Social Features:
+Set up the following/followers system
+Create the activity feed
+Add the ability to like and comment on food entries
+Profile Enhancements:
+Connect the profile form to the backend
+Add profile picture upload with Cloudinary
+Implement stats and progress tracking
+Mobile Responsiveness:
+Add a mobile navigation menu for the sidebar
+Optimize layouts for smaller screens
 
 ## LAYOUT
 - Create shadcn / ui dashboard component
@@ -30,6 +44,7 @@
 
 ## DETAILS
 - get favicon working
+- social nutrition tracker everywhere
 
 ## ACCESSIBILITY
 - lighthouse
