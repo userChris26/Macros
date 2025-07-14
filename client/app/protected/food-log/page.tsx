@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { FoodSearchDialog } from "@/components/food-search-dialog";
 import { toast } from "sonner";
 import Cookies from 'js-cookie';
-import { getApiUrl } from '@/lib/utils';
+import { getApiUrl, decodeJWT } from '@/lib/utils';
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface FoodEntry {
   _id: string;
@@ -25,6 +32,7 @@ export default function FoodLogPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [totalMacros, setTotalMacros] = useState({
     calories: 0,
     protein: 0,
@@ -32,25 +40,29 @@ export default function FoodLogPage() {
     fat: 0
   });
 
-  const userId = Cookies.get('userId');
-  const today = new Date().toISOString().split('T')[0];
+  const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+  const token = Cookies.get('jwtToken');
+  const decodedToken = token ? decodeJWT(token) : null;
+  const userId = decodedToken?.userId;
 
   useEffect(() => {
     if (!userId) {
-      toast.error("User ID not found. Please try logging in again.");
+      toast.error("Please log in to view your food log");
       return;
     }
     fetchFoodEntries();
-  }, [userId]);
+  }, [userId, selectedDate]); // Refetch when date or userId changes
 
   const fetchFoodEntries = async () => {
+    if (!userId) return;
+
     try {
       const response = await fetch(`${getApiUrl()}/api/getfoodentries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId, date: today }),
+        body: JSON.stringify({ userId, date: formattedDate }),
       });
 
       const data = await response.json();
@@ -100,13 +112,13 @@ export default function FoodLogPage() {
           userId,
           fdcId: food.fdcId,
           servingSize,
-          date: today
+          date: formattedDate
         }),
       });
 
       const data = await response.json();
       if (data.success) {
-        await fetchFoodEntries(); // Refresh the list
+        await fetchFoodEntries();
         toast.success("Food entry added successfully");
       } else {
         toast.error(data.error || "Failed to add food entry");
@@ -150,10 +162,30 @@ export default function FoodLogPage() {
     );
   }
 
+  const isToday = formattedDate === format(new Date(), 'yyyy-MM-dd');
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Food Log</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Food Log</h1>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                {format(selectedDate, 'MMMM d, yyyy')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Food Entry
@@ -163,7 +195,9 @@ export default function FoodLogPage() {
       <div className="grid gap-4">
         {/* Macros Summary Card */}
         <div className="border rounded-lg p-4">
-          <h2 className="font-semibold mb-2">Today&apos;s Macros</h2>
+          <h2 className="font-semibold mb-2">
+            {isToday ? "Today's" : format(selectedDate, "MMMM d's")} Macros
+          </h2>
           <div className="grid grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Calories</p>
@@ -186,7 +220,9 @@ export default function FoodLogPage() {
 
         {/* Food Entries List */}
         <div className="border rounded-lg p-4">
-          <h2 className="font-semibold mb-4">Today&apos;s Entries</h2>
+          <h2 className="font-semibold mb-4">
+            {isToday ? "Today's" : format(selectedDate, "MMMM d's")} Entries
+          </h2>
           {loading ? (
             <div className="text-center text-muted-foreground py-8">
               Loading...
@@ -216,7 +252,8 @@ export default function FoodLogPage() {
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-8">
-              No food entries yet. Click &quot;Add Food Entry&quot; to get started!
+              No food entries for {format(selectedDate, 'MMMM d, yyyy')}. 
+              {isToday && " Click \"Add Food Entry\" to get started!"}
             </div>
           )}
         </div>

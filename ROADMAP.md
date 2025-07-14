@@ -1,17 +1,18 @@
 # ROADMAP
 
 ## ASAP
-- how to do unit tests with every push
-- Ensure all API Routes work
-- When put in unit tests here
-- make food date be iso not string if possible
 - Start taking pictures of food and actually using (experiment for a week!)
 
 focus on the Network, User settings, and Food queries
 
-Food Log Features:
-Create the food entry form with USDA API integration
-Add a calendar view for historical entries
+remove readme in client
+subfolders in server (rename files?)
+set up github action
+banner transparent in readme
+demo of unit testing required
+sequence diagram / gantt chart
+
+
 Implement macro tracking goals
 Social Features:
 Set up the following/followers system
@@ -39,11 +40,14 @@ Optimize layouts for smaller screens
 - email / password recovery
 - password hashing
 
+## TESTING
+- Unit Tests
+- Ensure all endpoints work well
+
 ## EXPANSION
 - Flutter create the same thing
 
 ## DETAILS
-- get favicon working
 - social nutrition tracker everywhere
 
 ## ACCESSIBILITY

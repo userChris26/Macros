@@ -113,7 +113,7 @@ exports.setApp = function( app, client )
 
 	app.post('/api/login', async (req, res) => {
 		// incoming: email, password
-		// outgoing: accessToken, userId, firstName, lastName, error
+		// outgoing: accessToken, error
 
 		const { userEmail, userPassword } = req.body;
 		var ret;
@@ -124,21 +124,16 @@ exports.setApp = function( app, client )
 				ret = { error: "Login/Password incorrect" };
 			} else {
 				const token = require("./createJWT.js");
-				const tokenData = token.createToken({
-					id: result._id,
-					firstName: result.firstName,
-					lastName: result.lastName,
-					profilePic: result.profilePic,
-					bio: result.bio
-				});
+				const tokenData = token.createToken(result);
 
-				ret = {
-					accessToken: tokenData.accessToken,
-					userId: result._id.toString(),
-					firstName: result.firstName,
-					lastName: result.lastName,
-					error: ''
-				};
+				if (tokenData.error) {
+					ret = { error: tokenData.error };
+				} else {
+					ret = {
+						accessToken: tokenData.accessToken,
+						error: ''
+					};
+				}
 			}
 		} catch(e) {
 			ret = { error: e.message };

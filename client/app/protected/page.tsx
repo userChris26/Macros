@@ -4,7 +4,7 @@ import { InfoIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from 'js-cookie';
-import { getApiUrl } from "@/lib/utils";
+import { getApiUrl, decodeJWT } from "@/lib/utils";
 
 interface DashboardStats {
   totalCalories: number;
@@ -22,7 +22,18 @@ export default function ProtectedPage() {
   });
 
   const fetchDashboardStats = async () => {
-    const userId = Cookies.get('userId');
+    const token = Cookies.get('jwtToken');
+    if (!token) {
+      router.push('/auth/login');
+      return;
+    }
+
+    const decoded = decodeJWT(token);
+    if (!decoded) {
+      router.push('/auth/login');
+      return;
+    }
+
     const today = new Date().toISOString().split('T')[0];
 
     try {
@@ -31,7 +42,7 @@ export default function ProtectedPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId, date: today }),
+        body: JSON.stringify({ userId: decoded.userId, date: today }),
       });
 
       const data = await response.json();
