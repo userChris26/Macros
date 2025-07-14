@@ -264,7 +264,7 @@ exports.setApp = function ( app, client )
         res.status(200).json(ret);
     });
 
-        // Search foods route
+    // Search foods route
     app.post('/api/searchfoods', async (req, res) => {
         console.log('=== SEARCH FOODS ROUTE CALLED ===');
         const { query } = req.body;
