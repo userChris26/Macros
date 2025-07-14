@@ -1,54 +1,51 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-exports.createToken = function ( fn, ln, id )
-{
-    return _createToken( fn, ln, id );
+exports.createToken = function (user) {
+    return _createToken(user);
 }
 
-_createToken = function ( fn, ln, id )
-{
-    try
-    {
-        const expiration = new Date();
-        const user = {userId:id, firstName:fn, lastName:ln};
+_createToken = function (user) {
+    try {
+        const payload = {
+            userId: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            profilePic: user.profilePic || null,
+            bio: user.bio || null
+        };
 
-        const accessToken = jwt.sign( user, process.env.ACCESS_TOKEN_SECRET);
-
-        var ret = {accessToken:accessToken};
+        const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET);
+        return { accessToken };
     }
-    catch(e)
-    {
-        var ret = {error:e.message};
+    catch(e) {
+        return { error: e.message };
     }
-    return ret;
 }
 
-exports.isExpired = function( token )
-{
-    var isError = jwt.verify( token, process.env.ACCESS_TOKEN_SECRET,
-        (err, verifiedJwt) =>
-    {
-        if( err )
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    });
+exports.isExpired = function(token) {
+    var isError = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,
+        (err, verifiedJwt) => {
+            if(err) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        });
 
     return isError;
 }
 
-exports.refresh = function( token )
-{
-    var ud = jwt.decode(token,{complete:true});
-
-    var userId = ud.payload.id;
-    var firstName = ud.payload.firstName;
-    var lastName = ud.payload.lastName;
-
-    return _createToken( firstName, lastName, userId );
+exports.refresh = function(token) {
+    var ud = jwt.decode(token, { complete: true });
+    return _createToken({
+        _id: ud.payload.userId,
+        firstName: ud.payload.firstName,
+        lastName: ud.payload.lastName,
+        email: ud.payload.email,
+        profilePic: ud.payload.profilePic,
+        bio: ud.payload.bio
+    });
 }

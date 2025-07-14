@@ -113,7 +113,7 @@ exports.setApp = function( app, client )
 
 	app.post('/api/login', async (req, res) => {
 		// incoming: email, password
-		// outgoing: accessToken, userId, firstName, lastName, error
+		// outgoing: accessToken, error
 
 		const { userEmail, userPassword } = req.body;
 		var ret;
@@ -124,21 +124,16 @@ exports.setApp = function( app, client )
 				ret = { error: "Login/Password incorrect" };
 			} else {
 				const token = require("./createJWT.js");
-				const tokenData = token.createToken({
-					id: result._id,
-					firstName: result.firstName,
-					lastName: result.lastName,
-					profilePic: result.profilePic,
-					bio: result.bio
-				});
+				const tokenData = token.createToken(result);
 
-				ret = {
-					accessToken: tokenData.accessToken,
-					userId: result._id.toString(),
-					firstName: result.firstName,
-					lastName: result.lastName,
-					error: ''
-				};
+				if (tokenData.error) {
+					ret = { error: tokenData.error };
+				} else {
+					ret = {
+						accessToken: tokenData.accessToken,
+						error: ''
+					};
+				}
 			}
 		} catch(e) {
 			ret = { error: e.message };
@@ -204,6 +199,42 @@ exports.setApp = function( app, client )
 
 
 	// ─── Social Network Endpoints
+
+	// Search users
+	app.get('/api/users/search', async (req, res) => {
+	  try {
+	    const { q } = req.query;
+	    
+	    if (!q) {
+	      return res.status(400).json({ error: 'Search query is required' });
+	    }
+
+	    // Search by first name, last name, or email
+	    const users = await User.find({
+	      $or: [
+	        { firstName: { $regex: q, $options: 'i' } },
+	        { lastName: { $regex: q, $options: 'i' } },
+	        { email: { $regex: q, $options: 'i' } }
+	      ]
+	    })
+	    .select('firstName lastName email profilePic')
+	    .limit(10);
+
+	    // Transform the response to match our standardized format
+	    const transformedUsers = users.map(user => ({
+	      id: user._id,
+	      firstName: user.firstName,
+	      lastName: user.lastName,
+	      email: user.email,
+	      profilePic: user.profilePic || null
+	    }));
+
+	    res.json({ users: transformedUsers, error: '' });
+	  } catch (err) {
+	    console.error('User search error:', err);
+	    res.status(500).json({ error: 'Failed to search users' });
+	  }
+	});
 
 	// Follow a user
 	app.post('/api/follow', async (req, res) => {
@@ -732,5 +763,43 @@ exports.setApp = function( app, client )
                 message: 'USDA API test failed'
             });
         }
+    });
+
+    // Get dashboard stats
+    app.get('/api/dashboard/stats/:userId', async (req, res) => {
+      try {
+        const { userId } = req.params;
+        const today = new Date().toISOString().split('T')[0];
+
+        // Get today's food entries
+        const foodEntries = await FoodEntry.find({
+          userId,
+          dateAdded: today
+        });
+
+        // Calculate total calories
+        const totalCalories = foodEntries.reduce((acc, entry) => 
+          acc + parseFloat(entry.nutrients.calories || '0'), 0
+        );
+
+        // Get following count
+        const followingCount = await Network.countDocuments({ followerId: userId });
+
+        // Get followers count
+        const followersCount = await Network.countDocuments({ followingId: userId });
+
+        res.json({
+          success: true,
+          stats: {
+            totalCalories,
+            totalEntries: foodEntries.length,
+            following: followingCount,
+            followers: followersCount
+          }
+        });
+      } catch (err) {
+        console.error('Error fetching dashboard stats:', err);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+      }
     });
 }

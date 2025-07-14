@@ -24,11 +24,6 @@ export function AuthButton() {
       // Remove the JWT cookie
       Cookies.remove('jwtToken', { path: '/' });
       
-      // Clear any other auth-related cookies if they exist
-      Cookies.remove('userId', { path: '/' });
-      Cookies.remove('firstName', { path: '/' });
-      Cookies.remove('lastName', { path: '/' });
-      
       // Update state
       setIsLoggedIn(false);
       

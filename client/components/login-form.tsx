@@ -43,17 +43,9 @@ export function LoginForm({
         return;
       }
       
-      // Store the JWT token and user ID as cookies
+      // Store the JWT token
       Cookies.set('jwtToken', response.accessToken || '', {
         expires: 7, // 7 days
-        path: '/',
-        sameSite: 'strict',
-        secure: process.env.NODE_ENV === 'production'
-      });
-
-      // Store user ID
-      Cookies.set('userId', response.userId || '', {
-        expires: 7,
         path: '/',
         sameSite: 'strict',
         secure: process.env.NODE_ENV === 'production'

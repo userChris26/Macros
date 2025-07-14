@@ -1,12 +1,145 @@
 'use client';
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Edit2 } from "lucide-react";
+import { Edit2 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { decodeJWT, getApiUrl } from "@/lib/utils";
+import Cookies from 'js-cookie';
+import { toast } from "sonner";
+
+interface UserProfile {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  profilePic: string | null;
+  bio: string | null;
+  stats: {
+    following: number;
+    followers: number;
+  };
+}
 
 export default function ProfilePage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    bio: ''
+  });
+
+  useEffect(() => {
+    const token = Cookies.get('jwtToken');
+    if (!token) return;
+
+    const decoded = decodeJWT(token);
+    if (!decoded) return;
+
+    // Initialize form data with decoded JWT data
+    setFormData({
+      firstName: decoded.firstName,
+      lastName: decoded.lastName,
+      email: decoded.email,
+      bio: decoded.bio || ''
+    });
+
+    // Fetch full profile data including stats
+    const fetchProfile = async () => {
+      try {
+        // First get user data
+        const userResponse = await fetch(`${getApiUrl()}/api/user/${decoded.userId}`);
+        const userData = await userResponse.json();
+        
+        if (userData.error) {
+          toast.error(userData.error);
+          return;
+        }
+
+        // Then get stats
+        const statsResponse = await fetch(`${getApiUrl()}/api/dashboard/stats/${decoded.userId}`);
+        const statsData = await statsResponse.json();
+
+        if (statsData.error) {
+          toast.error(statsData.error);
+          return;
+        }
+
+        // Combine user data with stats
+        setProfile({
+          userId: decoded.userId,
+          firstName: userData.user.firstName,
+          lastName: userData.user.lastName,
+          email: userData.user.email,
+          profilePic: userData.user.profilePic,
+          bio: userData.user.bio,
+          stats: {
+            following: statsData.stats.following,
+            followers: statsData.stats.followers
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('Failed to load profile data');
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const token = Cookies.get('jwtToken');
+      if (!token || !profile) return;
+
+      const response = await fetch(`${getApiUrl()}/api/user/${profile.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+      
+      // Update profile state with new data
+      setProfile(prev => prev ? {
+        ...prev,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        email: data.user.email,
+        bio: data.user.bio
+      } : null);
+      
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="animate-pulse text-lg">Loading profile...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -19,16 +152,30 @@ export default function ProfilePage() {
           <Card className="p-4">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
-                <div className="h-32 w-32 rounded-full bg-muted flex items-center justify-center">
-                  <Camera className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full">
+                <Avatar size="xl">
+                  {profile.profilePic ? (
+                    <AvatarImage src={profile.profilePic} alt={`${profile.firstName}'s profile`} />
+                  ) : (
+                    <AvatarFallback className="text-lg">
+                      {profile.firstName[0]}
+                      {profile.lastName[0]}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <Button 
+                  size="icon" 
+                  variant="outline" 
+                  className="absolute bottom-0 right-0 rounded-full"
+                  onClick={() => toast.info('Profile picture upload coming soon!')}
+                >
                   <Edit2 className="h-4 w-4" />
                 </Button>
               </div>
               <div className="text-center">
-                <h2 className="font-semibold">John Doe</h2>
-                <p className="text-sm text-muted-foreground">Joined January 2024</p>
+                <h2 className="font-semibold">{profile.firstName} {profile.lastName}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {profile.email}
+                </p>
               </div>
             </div>
           </Card>
@@ -37,11 +184,11 @@ export default function ProfilePage() {
             <h3 className="font-semibold mb-4">Stats</h3>
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{profile.stats.following}</p>
                 <p className="text-sm text-muted-foreground">Following</p>
               </div>
               <div>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{profile.stats.followers}</p>
                 <p className="text-sm text-muted-foreground">Followers</p>
               </div>
             </div>
@@ -51,26 +198,46 @@ export default function ProfilePage() {
         {/* Profile Information */}
         <Card className="p-6">
           <h3 className="font-semibold mb-6">Profile Information</h3>
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="John" />
+                <Input 
+                  id="firstName" 
+                  value={formData.firstName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Doe" />
+                <Input 
+                  id="lastName" 
+                  value={formData.lastName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="john@example.com" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
-              <Input id="bio" placeholder="Tell us about yourself..." />
+              <Input 
+                id="bio" 
+                value={formData.bio}
+                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Tell us about yourself..."
+              />
             </div>
-            <Button>Save Changes</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
           </form>
         </Card>
       </div>

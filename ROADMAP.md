@@ -1,230 +1,153 @@
 # ROADMAP
 
-## ASAP
-- how to do unit tests with every push
-- Ensure all API Routes work
-- When put in unit tests here
-- make food date be iso not string if possible
-- Start taking pictures of food and actually using (experiment for a week!)
+## ✅ COMPLETED
+- Basic authentication with JWT
+- USDA API integration for food search
+- Food entry creation and management
+- Following/followers system implementation
+- User search functionality
+- Profile page with user info
+- Basic stats display (following/followers)
+- Shadcn/UI component integration
+- Dark/light mode support
 
-focus on the Network, User settings, and Food queries
+### Live Testing Begin
+- Allow users to pick which meal they want their food to go in (bldsnack,water)
+- Post a picture of a meal / food item
+- make dummy accounts
 
-Food Log Features:
-Create the food entry form with USDA API integration
-Add a calendar view for historical entries
-Implement macro tracking goals
-Social Features:
-Set up the following/followers system
-Create the activity feed
-Add the ability to like and comment on food entries
-Profile Enhancements:
-Connect the profile form to the backend
-Add profile picture upload with Cloudinary
-Implement stats and progress tracking
-Mobile Responsiveness:
-Add a mobile navigation menu for the sidebar
-Optimize layouts for smaller screens
+### Social Feed Enhancement
+- Design and implement social feed layout
+- Show followed users' food entries
+- Add likes and comments functionality
+- Implement real-time updates
+- Add meal photos display
+- Sort foods by meals in the feed
 
-## LAYOUT
-- Create shadcn / ui dashboard component
-- Create windows for each app screen
+### Profile Enhancements
+- Set up Cloudinary integration
+- Implement profile picture upload/update
+- Add profile picture preview
+- Implement image cropping/resizing
+- Add profile completion percentage
 
-## FUNCTIONALITY
-- Profile update pics and stuff, stats...
-- Food interface: add food, see journal, history, unit sizes?
-- Social, follow people, see network
-- Routine meals in here somewhere
+### Testing Implementation
+- Set up testing framework (Jest + React Testing Library)
+- Write unit tests for:
+  - Authentication flows
+  - Food entry management
+  - Social features
+  - API integrations
+- Implement integration tests
+- Set up GitHub Actions for CI/CD
+- Add test coverage reporting
 
-## BACKEND
-- email / password recovery
-- password hashing
+### Flutter App Development
+- Set up Flutter development environment
+- Create app architecture
+- Implement authentication
+- Build core features:
+  - Food logging
+  - Social feed
+  - Profile management
+- Ensure cross-platform compatibility
 
-## EXPANSION
-- Flutter create the same thing
+### User Experience Improvements
+- Mobile responsiveness optimization
+- Add mobile navigation menu
+- Improve hero section design
+- Add loading states and animations
+- Implement error boundaries
+- Add tooltips and help text
 
-## DETAILS
-- get favicon working
-- social nutrition tracker everywhere
+### Backend Enhancements
+- Email verification system
+- Password recovery flow
+- Password hashing implementation
+- API rate limiting
+- Error handling improvements
+- API documentation
 
-## ACCESSIBILITY
-- lighthouse
-- light and dark mode
-- password complexity
-- mobile / responsiveneess
+### Feature Expansion
+- Macro tracking goals
+- Routine meals functionality
+- Advanced statistics
+- Progress tracking
+- Export functionality
+- Meal planning
 
-## DEPLOYMENT
-- Unit Tests for EVERYTHING
-- On server, full walkthrough for new user (end to end testing)
+### Security & Performance
+- Security audit
+- Performance optimization
+- Caching implementation
+- Load testing
+- Error tracking setup
+- Analytics integration
 
-## PRESENTATION
-- Github sharp / branding up
-- Hero show off screenshots from mobile
-- Powerpoint good and rehearsed (mobile app visuals there also)
+### Documentation & Presentation
+- Update README.md
+- Create transparent banner
+- Add sequence diagrams
+- Create Gantt chart
+- Prepare demo slides
+- Record demo vide
 
-## ME
-- when do this again on my own
-- what technologies (JWT / sendgrid) for resume
+### Code Quality
+- Code refactoring
+- File organization
+- Documentation updates
+- Performance monitoring
+- Security updates
+- Dependency management
 
-## UNIT TESTING
+### Testing & Monitoring
+- End-to-end testing
+- Performance testing
+- Accessibility testing
+- Error monitoring
+- Usage analytics
+- User feedback collection
 
-Unit Tests are isolated tests that verify specific pieces (units) of your code work as expected. Think of them as automated checks that run before code changes to prevent breaking existing functionality.
+### Accessibility
+- Lighthouse audits
+- Keyboard navigation
+- Screen reader support
+- Color contrast checking
+- ARIA labels
+- Focus management
 
-Here are examples of what we could test in your app:
+## 📚 DOCUMENTATION NEEDS
 
-### Frontend Tests
-```typescript
-```
+### Technical Documentation
+- API documentation
+- Component documentation
+- Testing guidelines
+- Deployment guide
+- Contributing guide
+- Security policy
 
-### Backend API Tests
-```typescript
-// Example: Testing Authentication Endpoints
-describe('POST /api/auth/login', () => {
-  it('should return 401 with wrong password')
-  it('should return JWT token with valid credentials')
-  it('should set correct cookie headers')
-})
+### User Documentation
+- User guide
+- FAQ section
+- Feature tutorials
+- Troubleshooting guide
+- Privacy policy
+- Terms of service
 
-// Example: Testing Food Entry Endpoints
-describe('POST /api/food-entries', () => {
-  it('should reject entries without required fields')
-  it('should calculate correct total calories')
-  it('should save image to Cloudinary')
-  it('should link entry to correct user')
-})
+## 🎓 LEARNING OUTCOMES
+- JWT implementation
+- SendGrid integration
+- USDA API integration
+- Cloudinary implementation
+- Flutter development
+- Testing methodologies
+- CI/CD practices
+- Social features implementation
 
-// Example: Testing USDA API Integration
-describe('USDA Service', () => {
-  it('should handle API timeouts gracefully')
-  it('should cache frequent requests')
-  it('should parse nutrition data correctly')
-})
-```
-
-### Integration Tests
-```typescript
-// Example: Testing Complete Food Logging Flow
-describe('Food Logging Flow', () => {
-  it('should create entry from USDA search to database')
-  it('should update user's daily totals')
-  it('should appear in social feed')
-})
-```
-
-### Key Testing Areas:
-
-1. **Authentication**
-   - Login/signup flows
-   - JWT token handling
-   - Protected route access
-   - Password reset flow
-
-2. **Food Entry Management**
-   - CRUD operations
-   - Macro calculations
-   - Image upload
-   - Data validation
-
-3. **Social Features**
-   - Following users
-   - Feed generation
-   - Comment functionality
-   - Privacy settings
-
-4. **External API Integration**
-   - USDA API responses
-   - Cloudinary upload success
-   - SendGrid email delivery
-   - Error handling
-
-5. **Data Integrity**
-   - Database operations
-   - Data transformations
-   - Cache management
-   - State updates
-
-### Benefits for Your Project:
-
-1. **API Stability**
-   - Catch breaking changes before deployment
-   - Ensure backward compatibility
-   - Validate API responses
-   - Test error handling
-
-2. **Feature Confidence**
-   - Verify calculations are correct
-   - Ensure UI behaves consistently
-   - Validate user flows
-   - Check edge cases
-
-3. **Refactoring Safety**
-   - Safely update dependencies
-   - Modernize code patterns
-   - Split components
-   - Optimize performance
-
-4. **Documentation**
-   - Tests serve as usage examples
-   - Clear expected behavior
-   - API contract validation
-   - Integration patterns
-
-### Common Test Scenarios:
-
-1. **User Flow Tests**
-   ```typescript
-   // Ensure users can:
-   - Log in and access protected routes
-   - Create and edit food entries
-   - Follow other users
-   - Comment on posts
-   ```
-
-2. **Data Validation Tests**
-   ```typescript
-   // Verify that:
-   - Food entries have required fields
-   - Macros add up correctly
-   - Dates are properly formatted
-   - Images are valid
-   ```
-
-3. **Error Handling Tests**
-   ```typescript
-   // Check responses for:
-   - Invalid API keys
-   - Network failures
-   - Invalid input data
-   - Rate limiting
-   ```
-
-4. **Security Tests**
-   ```typescript
-   // Validate that:
-   - Users can't access others' private data
-   - JWT tokens are properly validated
-   - Password rules are enforced
-   - Rate limiting works
-   ```
-
-Would you like me to:
-1. Explain more about any specific testing area?
-2. Provide more examples for a particular feature?
-3. Discuss testing tools and frameworks?
-4. Explain test organization strategies?
-
-## EXAMPLES
-
-// Example: Testing the Login Form Component
-describe('LoginForm', () => {
-  it('should show error message with invalid credentials')
-  it('should enable submit button only when form is valid')
-  it('should store JWT token after successful login')
-  it('should redirect to dashboard after login')
-})
-
-// Example: Testing Food Entry Card Component
-describe('FoodEntryCard', () => {
-  it('should display correct macros breakdown')
-  it('should format date correctly')
-  it('should show edit options only for user's own entries')
-})
+## Presentation
+- Powerpoint
+- Make hero look good
+- 'social calorie tracker' everywhere
+- Github presentation
+- Video demo?
+- Theme and for app as well
