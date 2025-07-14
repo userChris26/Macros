@@ -1,8 +1,8 @@
 // models/Food.js
-const { Schema } = require('mongoose');
-const ufnConn = require('../db');
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-module.exports = ufnConn.model('Food', new Schema({
+module.exports = mongoose.model('Food', new Schema({
   user:        { type: Schema.Types.ObjectId, ref: 'User', required: true },
   foodName:    { type: String, required: true },
   calories:    { type: Number },
@@ -16,7 +16,7 @@ module.exports = ufnConn.model('Food', new Schema({
     required: true,
     default: 'breakfast'
   },
-  meal: { type: require('mongoose').Schema.Types.ObjectId, ref: 'Meal' },
+  meal: { type: Schema.Types.ObjectId, ref: 'Meal' },
   date:        { type: Date },     // when they ate it
   createdAt:   { type: Date, default: Date.now }
 }));

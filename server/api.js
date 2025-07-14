@@ -2,7 +2,23 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { cloudinary, upload } = require('./config/cloudinary');
 const sgMail = require('@sendgrid/mail');
+const emailConfig = require('./config/email');
 const FoodEntry = require('./models/FoodEntry');
+const User = require('./models/user');
+
+// Initialize SendGrid
+if (!process.env.SENDGRID_API_KEY) {
+  console.error('❌ Missing SENDGRID_API_KEY in .env');
+} else {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('✅ SendGrid API key loaded');
+}
+
+if (!process.env.SENDGRID_SENDER_EMAIL) {
+  console.error('❌ Missing SENDGRID_SENDER_EMAIL in .env');
+} else {
+  console.log('✅ SendGrid sender email configured:', process.env.SENDGRID_SENDER_EMAIL);
+}
 
 //Define schemas for social network features
 const UserSchema = new mongoose.Schema({
@@ -12,7 +28,9 @@ const UserSchema = new mongoose.Schema({
   password:   { type: String, required: true },
   profilePic: { type: String },
   bio:        { type: String },
-  createdAt:  { type: Date,   default: Date.now }
+  createdAt:  { type: Date,   default: Date.now },
+  resetToken: { type: String },
+  resetTokenExpiry: { type: Date }
 });
 
 const NetworkSchema = new mongoose.Schema({
@@ -22,7 +40,6 @@ const NetworkSchema = new mongoose.Schema({
 });
 
 // Create models
-const User = mongoose.model('User', UserSchema);
 const Network = mongoose.model('Network', NetworkSchema);
 const Food = mongoose.model('Food', UserSchema);
 const Meal = mongoose.model('Meal', UserSchema);
@@ -801,5 +818,146 @@ exports.setApp = function( app, client )
         console.error('Error fetching dashboard stats:', err);
         res.status(500).json({ error: 'Failed to fetch dashboard stats' });
       }
+    });
+
+    // Password Reset Endpoints
+    app.post('/api/forgot-password', async (req, res) => {
+      try {
+        const { email } = req.body;
+        
+        // Find user by email
+        const user = await User.findOne({ email });
+        
+        // Don't reveal if user exists or not
+        if (!user) {
+          return res.json({ error: '' }); // Success response even if user not found
+        }
+
+        // Generate reset token (valid for 1 hour)
+        const resetToken = require('crypto').randomBytes(32).toString('hex');
+        const resetTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
+
+        console.log('Generated reset token for', email, ':', {
+          token: resetToken,
+          expiry: resetTokenExpiry.toISOString()
+        });
+
+        // Save reset token to user
+        const updatedUser = await User.findByIdAndUpdate(
+          user._id,
+          {
+            resetToken,
+            resetTokenExpiry
+          },
+          { new: true }
+        );
+
+        console.log('Updated user with reset token:', {
+          email: updatedUser.email,
+          tokenSaved: updatedUser.resetToken === resetToken,
+          expiry: updatedUser.resetTokenExpiry.toISOString()
+        });
+
+        // Send email using SendGrid
+        const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${resetToken}`;
+        
+        const msg = {
+          to: email,
+          from: emailConfig.senderEmail,
+          subject: emailConfig.templates.passwordReset.subject,
+          text: emailConfig.templates.passwordReset.generateText(resetUrl),
+          html: emailConfig.templates.passwordReset.generateHtml(resetUrl)
+        };
+
+        try {
+          await sgMail.send(msg);
+          console.log('SendGrid email sent successfully');
+          res.json({ error: '' });
+        } catch (sendGridError) {
+          console.error('SendGrid error:', {
+            code: sendGridError.code,
+            message: sendGridError.message,
+            response: sendGridError.response?.body
+          });
+          throw sendGridError;
+        }
+      } catch (err) {
+        console.error('Password reset error:', err);
+        res.status(500).json({ 
+          error: 'Failed to process password reset',
+          details: err.response?.body || err.message
+        });
+      }
+    });
+
+    // Reset Password with Token
+    app.post('/api/reset-password', async (req, res) => {
+      try {
+        const { token, newPassword } = req.body;
+        
+        console.log('Reset password attempt with token:', token);
+        
+        // Find user with valid reset token
+        const user = await User.findOne({
+          resetToken: token,
+          resetTokenExpiry: { $gt: Date.now() }
+        });
+
+        if (!user) {
+          // Debug why the token is invalid
+          const userWithToken = await User.findOne({ resetToken: token });
+          if (userWithToken) {
+            console.log('Token found but expired. Token expiry:', userWithToken.resetTokenExpiry, 'Current time:', Date.now());
+          } else {
+            console.log('No user found with token');
+          }
+          return res.status(400).json({ error: 'Invalid or expired reset token' });
+        }
+
+        console.log('Found user for password reset:', user.email);
+
+        // Update password and clear reset token
+        await User.findByIdAndUpdate(user._id, {
+          password: newPassword,
+          resetToken: null,
+          resetTokenExpiry: null
+        });
+
+        // Send confirmation email
+        const msg = {
+          to: user.email,
+          from: emailConfig.senderEmail,
+          subject: 'Your password has been reset',
+          text: 'Your password for Macros has been successfully reset.',
+          html: `
+            <h1>Password Reset Successful</h1>
+            <p>Your password for Macros has been successfully reset.</p>
+            <p>If you did not make this change, please contact support immediately.</p>
+          `
+        };
+
+        try {
+          await sgMail.send(msg);
+          console.log('Password reset confirmation email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+          // Don't return error to client - password was still reset successfully
+        }
+
+        res.json({ error: '' });
+      } catch (err) {
+        console.error('Password reset error:', err);
+        res.status(500).json({ error: 'Failed to reset password' });
+      }
+    });
+
+    // Test SendGrid Configuration
+    app.get('/api/test-email-config', (req, res) => {
+      res.json({
+        sendgridConfigured: !!process.env.SENDGRID_API_KEY,
+        senderEmail: process.env.SENDGRID_SENDER_EMAIL || 'Not configured',
+        apiKeyLastFour: process.env.SENDGRID_API_KEY ? 
+          `...${process.env.SENDGRID_API_KEY.slice(-4)}` : 'Not configured'
+      });
     });
 }
