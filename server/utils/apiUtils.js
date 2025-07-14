@@ -3,7 +3,7 @@
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://your-domain.com' 
-  : 'http://localhost:3000';
+  : 'http://localhost:5000';
 
 // Upload profile picture
 export const uploadProfilePicture = async (userId, file) => {
