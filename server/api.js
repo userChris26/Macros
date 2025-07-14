@@ -37,10 +37,10 @@ exports.setApp = function( app, client )
 		// incoming: email, password, firstName, lastName
 		// outgoing: error
 
-		const { email, password, firstName, lastName } = req.body;
+		const { userEmail, userPassword, userFirstName, userLastName } = req.body;
 		var ret;
 		
-		const result = await User.findOne({ email });
+		const result = await User.findOne({ email: userEmail });
 		try
 		{
 			if (result)
@@ -51,9 +51,9 @@ exports.setApp = function( app, client )
 			{
 				const newUser = new User(
 				{ 
-				email,
-				password,
-				firstName, lastName
+				email: userEmail,
+				password: userPassword,
+				firstName: userFirstName, lastName: userLastName
 				});
 				await newUser.save();
 
@@ -88,10 +88,10 @@ exports.setApp = function( app, client )
 			// incoming: email, password
 			// outgoing: id, firstName, lastName, error
 
-			const { email, password } = req.body;
+			const { userEmail, userPassword } = req.body;
 			var ret;
 					
-			const result = await User.findOne({ email, password });
+			const result = await User.findOne({ userEmail, userPassword });
 			try
 			{
 				if (!result)
@@ -122,12 +122,12 @@ exports.setApp = function( app, client )
 
 	app.post('/api/updateaccount', async (req, res) =>
 		{
-			// incoming: id, firstName, lastName, email, userToken
+			// incoming: userId, userFirstName, userLastName, userEmail, userJwt
 			// outgoing: error
 
 			var token = require('./createJWT.js');
 			
-			const { id, firstName, lastName, email, userJwt } = req.body;
+			const { userId, userFirstName, userLastName, userEmail, userJwt } = req.body;
 			
 			try
 			{
@@ -150,7 +150,7 @@ exports.setApp = function( app, client )
 				result = await User.updateOne(
 					{_id:ObjectId.createFromHexString(userId)},
 					{
-						$set: { email, firstName, lastName }
+						$set: { email: userEmail, firstName: userFirstName, lastName: userLastName }
 					}
 				);
 				

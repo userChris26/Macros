@@ -21,7 +21,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +31,10 @@ export function LoginForm({
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    console.log('Attempting login with username:', username);
+    console.log('Attempting login with email:', email);
 
     try {
-      const response = await login(username, password);
+      const response = await login(email, password);
       console.log('Login response:', response);
       
       if (response.error) {
@@ -69,21 +69,21 @@ export function LoginForm({
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
-            Enter your username and password to login
+            Enter your email and password to login
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="email">email</Label>
                 <Input
-                  id="username"
+                  id="email"
                   type="text"
-                  placeholder="johndoe"
+                  placeholder="johndoe@example.com"
                   required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">

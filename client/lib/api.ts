@@ -10,7 +10,7 @@ export interface RegisterResponse {
   error?: string;
 }
 
-export const login = async (userLogin: string, userPassword: string): Promise<LoginResponse> => {
+export const login = async (userEmail: string, userPassword: string): Promise<LoginResponse> => {
   try {
     const response = await fetch('/api/login', {
       method: 'POST',
@@ -18,7 +18,7 @@ export const login = async (userLogin: string, userPassword: string): Promise<Lo
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userLogin,
+        userEmail,
         userPassword,
       }),
     });
@@ -34,7 +34,6 @@ export const register = async (
   userFirstName: string,
   userLastName: string,
   userEmail: string,
-  userLogin: string,
   userPassword: string
 ): Promise<RegisterResponse> => {
   try {
@@ -47,7 +46,6 @@ export const register = async (
         userFirstName,
         userLastName,
         userEmail,
-        userLogin,
         userPassword,
       }),
     });
