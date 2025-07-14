@@ -5,7 +5,7 @@
 </div>
 
 ## Overview
-Macros is a social nutrition tracking platform that helps users monitor their macronutrient intake and share their fitness journey with others. Built with modern web technologies and a focus on user experience, Macros makes it easy to track your nutrition while connecting with a community of like-minded individuals.
+Macros is a social nutrition tracking platform that helps users monitor their macronutrient intake and share their fitness journey with others. Built with modern web technologies and a focus on user experience, Macros makes it easy to track your nutrition while connecting with a community of like-minded individuals!
 
 ## ✨ Features
 

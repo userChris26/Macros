@@ -1,8 +1,8 @@
 // models/User.js
-const { Schema } = require('mongoose');
-const ufnConn = require('../db');
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-module.exports = ufnConn.model('User', new Schema({
+module.exports = mongoose.model('User', new Schema({
   firstName:  { type: String, required: true },
   lastName:   { type: String, required: true },
   email:      { type: String, required: true, unique: true },
@@ -10,5 +10,7 @@ module.exports = ufnConn.model('User', new Schema({
   profilePic: { type: String },                       // Cloudinary URL
   bio:        { type: String },
   createdAt:  { type: Date,   default: Date.now },
-  meals:      [{ type: Schema.Types.ObjectId, ref: 'Meal' }]
+  meals:      [{ type: Schema.Types.ObjectId, ref: 'Meal' }],
+  resetToken: { type: String },
+  resetTokenExpiry: { type: Date }
 }));
