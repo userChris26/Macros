@@ -10,6 +10,7 @@ interface DashboardStats {
   totalCalories: number;
   totalEntries: number;
   following: number;
+  followers: number;
 }
 
 export default function ProtectedPage() {
@@ -18,7 +19,8 @@ export default function ProtectedPage() {
   const [stats, setStats] = useState<DashboardStats>({
     totalCalories: 0,
     totalEntries: 0,
-    following: 0
+    following: 0,
+    followers: 0
   });
 
   const fetchDashboardStats = async () => {
@@ -34,28 +36,19 @@ export default function ProtectedPage() {
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-
     try {
-      const response = await fetch(`${getApiUrl()}/api/getfoodentries`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: decoded.userId, date: today }),
-      });
-
+      const response = await fetch(`${getApiUrl()}/api/dashboard/stats/${decoded.userId}`);
       const data = await response.json();
+      
       if (data.success) {
-        setStats({
-          totalCalories: data.foodEntries.reduce((acc: number, entry: any) => 
-            acc + parseFloat(entry.nutrients.calories || '0'), 0),
-          totalEntries: data.foodEntries.length,
-          following: 0 // Placeholder for now
-        });
+        setStats(data.stats);
+      } else {
+        console.error('Failed to fetch dashboard stats:', data.error);
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,7 +58,6 @@ export default function ProtectedPage() {
       router.push('/auth/login');
     } else {
       fetchDashboardStats();
-      setIsLoading(false);
     }
   }, [router]);
 
@@ -87,7 +79,7 @@ export default function ProtectedPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <div className="border rounded-lg p-4">
             <h3 className="font-semibold mb-2">Today&apos;s Calories</h3>
             <p className="text-2xl font-bold">{stats.totalCalories.toFixed(0)}</p>
@@ -99,6 +91,10 @@ export default function ProtectedPage() {
           <div className="border rounded-lg p-4">
             <h3 className="font-semibold mb-2">Following</h3>
             <p className="text-2xl font-bold">{stats.following}</p>
+          </div>
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">Followers</h3>
+            <p className="text-2xl font-bold">{stats.followers}</p>
           </div>
         </div>
       </div>
