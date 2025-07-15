@@ -10,7 +10,11 @@ module.exports = mongoose.model('User', new Schema({
   profilePic: { type: String },                       // Cloudinary URL
   bio:        { type: String },
   createdAt:  { type: Date,   default: Date.now },
+  isVerified: { type: Boolean, default: false },
   meals:      [{ type: Schema.Types.ObjectId, ref: 'Meal' }],
-  resetToken: { type: String },
-  resetTokenExpiry: { type: Date }
+
+  resetToken:       { type: String },
+  resetTokenExpiry: { type: Date },
+  verifyToken:      { type: String },
+  verifyTokenExpiry:{ type: Date }
 }));

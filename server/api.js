@@ -98,7 +98,8 @@ exports.setApp = function( app, client )
 				email: userEmail,
 				password: userPassword,
 				firstName: userFirstName,
-				lastName: userLastName
+				lastName: userLastName,
+				isVerified: false
 				});
 				await newUser.save();
 
@@ -929,6 +930,137 @@ exports.setApp = function( app, client )
       } catch (err) {
         console.error('Password reset error:', err);
         res.status(500).json({ error: 'Failed to reset password' });
+      }
+    });
+
+	// Email Verification Endpoints
+    app.post('/api/send-email-verification', async (req, res) => {
+      try {
+        const { email } = req.body;
+        
+        // Find user by email
+        const user = await User.findOne({ email });
+        
+        // Don't reveal if user exists or not
+        if (!user) {
+          return res.json({ error: '' }); // Success response even if user not found
+        }
+
+        // Generate reset token (valid for 1 hour)
+        const verifyToken = require('crypto').randomBytes(32).toString('hex');
+        const verifyTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
+
+        console.log('Generated verification token for', email, ':', {
+          token: verifyToken,
+          expiry: verifyTokenExpiry.toISOString()
+        });
+
+        // Save verification token to user
+        const updatedUser = await User.findByIdAndUpdate(
+          user._id,
+          {
+            verifyToken,
+            verifyTokenExpiry
+          },
+          { new: true }
+        );
+
+        console.log('Updated user with verification token:', {
+          email: updatedUser.email,
+          tokenSaved: updatedUser.verifyToken === verifyToken,
+          expiry: updatedUser.verifyTokenExpiry.toISOString()
+        });
+
+        // Send email using SendGrid
+        const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
+        
+        const msg = {
+          to: email,
+          from: emailConfig.senderEmail,
+          subject: emailConfig.templates.passwordReset.subject,
+          text: emailConfig.templates.passwordReset.generateText(verifyUrl),
+          html: emailConfig.templates.passwordReset.generateHtml(verifyUrl)
+        };
+
+        try {
+          await sgMail.send(msg);
+          console.log('SendGrid email sent successfully');
+          res.json({ error: '' });
+        } catch (sendGridError) {
+          console.error('SendGrid error:', {
+            code: sendGridError.code,
+            message: sendGridError.message,
+            response: sendGridError.response?.body
+          });
+          throw sendGridError;
+        }
+      } catch (err) {
+        console.error('Email verification error:', err);
+        res.status(500).json({ 
+          error: 'Failed to process email verification',
+          details: err.response?.body || err.message
+        });
+      }
+    });
+
+    // Verify Email with Token
+    app.post('/api/verify-email', async (req, res) => {
+      try {
+        const { token } = req.body;
+        
+        console.log('Verify email attempt with token:', token);
+        
+        // Find user with valid verification token
+        const user = await User.findOne({
+          verifyToken: token,
+          verifyTokenExpiry: { $gt: Date.now() }
+        });
+
+        if (!user) {
+          // Debug why the token is invalid
+          const userWithToken = await User.findOne({ verifyToken: token });
+          if (userWithToken) {
+            console.log('Token found but expired. Token expiry:', userWithToken.verifyTokenExpiry, 'Current time:', Date.now());
+          } else {
+            console.log('No user found with token');
+          }
+          return res.status(400).json({ error: 'Invalid or expired reset token' });
+        }
+
+        console.log('Found user for email verification:', user.email);
+
+        // Update password and clear reset token
+        await User.findByIdAndUpdate(user._id, {
+          isVerified: true,
+          verifyToken: null,
+          verifyTokenExpiry: null
+        });
+
+        // Send confirmation email
+        const msg = {
+          to: user.email,
+          from: emailConfig.senderEmail,
+          subject: 'Your email has been verified',
+          text: 'Your email for Macros has been successfully verified.',
+          html: `
+            <h1>Email Verification Successful</h1>
+            <p>Your email for Macros has been successfully verified.</p>
+            <p>If you did not make this change, please contact support immediately.</p>
+          `
+        };
+
+        try {
+          await sgMail.send(msg);
+          console.log('Email verification confirmation email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+          // Don't return error to client - email was still verified successfully
+        }
+
+        res.json({ error: '' });
+      } catch (err) {
+        console.error('Email verification error:', err);
+        res.status(500).json({ error: 'Failed to verify email' });
       }
     });
 
