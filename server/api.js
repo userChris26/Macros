@@ -1,10 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { cloudinary, upload } = require('./config/cloudinary');
+const cors = require('cors');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const sgMail = require('@sendgrid/mail');
-const emailConfig = require('./config/email');
+const { cloudinary } = require('./config/cloudinary');
 const FoodEntry = require('./models/FoodEntry');
 const User = require('./models/user');
+const Meal = require('./models/Meal');
 
 // Initialize SendGrid
 if (!process.env.SENDGRID_API_KEY) {
@@ -42,7 +45,6 @@ const NetworkSchema = new mongoose.Schema({
 // Create models
 const Network = mongoose.model('Network', NetworkSchema);
 const Food = mongoose.model('Food', UserSchema);
-const Meal = mongoose.model('Meal', UserSchema);
 
 
 // USDA Food API search function
@@ -326,18 +328,28 @@ exports.setApp = function( app, client )
 
 	// ─── Profile Management Endpoints
 	// Upload profile picture
-	app.post('/api/upload-profile-pic/:userId', upload.single('profilePic'), async (req, res) => {
+	app.post('/api/upload-profile-pic/:userId', async (req, res) => {
 		try {
 			const { userId } = req.params;
+			const { photoBase64 } = req.body;
 			
-			if (!req.file) {
-				return res.status(400).json({ error: 'No file uploaded' });
+			if (!photoBase64) {
+				return res.status(400).json({ error: 'No photo data provided' });
 			}
+
+			// Upload to Cloudinary
+			const uploadResponse = await cloudinary.uploader.upload(photoBase64, {
+				folder: 'profile_pictures',
+				transformation: [
+					{ width: 400, height: 400, crop: 'fill', gravity: 'face' },
+					{ quality: 'auto', fetch_format: 'auto' }
+				]
+			});
 
 			// Update user's profile picture URL in database
 			const updatedUser = await User.findByIdAndUpdate(
 				userId,
-				{ profilePic: req.file.path },
+				{ profilePic: uploadResponse.secure_url },
 				{ new: true }
 			);
 
@@ -346,8 +358,8 @@ exports.setApp = function( app, client )
 			}
 
 			res.json({
-			message: 'Profile picture uploaded successfully',
-				profilePicUrl: req.file.path,
+				message: 'Profile picture uploaded successfully',
+				profilePicUrl: uploadResponse.secure_url,
 				user: {
 					id: updatedUser._id,
 					firstName: updatedUser.firstName,
@@ -498,9 +510,9 @@ exports.setApp = function( app, client )
         console.log('Full request body:', JSON.stringify(req.body, null, 2));
         
         try {
-            const { userId, fdcId, servingSize, date } = req.body;
+            const { userId, fdcId, servingSize, date, mealType } = req.body;
             
-            console.log('Parsed fields:', { userId, fdcId, servingSize, date });
+            console.log('Parsed fields:', { userId, fdcId, servingSize, date, mealType });
             
             // Validation
             if (!userId || !fdcId || !servingSize) {
@@ -555,6 +567,7 @@ exports.setApp = function( app, client )
                 brandOwner: foodData.brandOwner || '',
                 servingSize: parseFloat(servingSize),
                 servingSizeUnit: 'g',
+                mealType: mealType || 'snack', // Add mealType here
                 nutrients: {
                     calories: nutrients.calories || '0',
                     protein: nutrients.protein || '0', 
@@ -611,6 +624,34 @@ exports.setApp = function( app, client )
             
             const entries = await FoodEntry.find(query);
             console.log('Found', entries.length, 'food entries for user', userId, 'on date', date);
+
+            // Get meal photos for each entry's meal type
+            const mealDate = new Date(date);
+            mealDate.setHours(0, 0, 0, 0);
+            const nextDay = new Date(mealDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            const meals = await Meal.find({
+                user: userId,
+                date: {
+                    $gte: mealDate,
+                    $lt: nextDay
+                }
+            });
+
+            // Create a map of mealType -> photo
+            const mealPhotoMap = meals.reduce((acc, meal) => {
+                if (meal.photo) {
+                    acc[meal.mealTime] = meal.photo;
+                }
+                return acc;
+            }, {});
+
+            // Add photo to each entry
+            const entriesWithPhotos = entries.map(entry => ({
+                ...entry.toObject(),
+                mealPhoto: mealPhotoMap[entry.mealType] || null
+            }));
             
             // Calculate total calories
             let totalCalories = 0;
@@ -622,7 +663,7 @@ exports.setApp = function( app, client )
             
             res.json({
                 success: true,
-                foodEntries: entries,
+                foodEntries: entriesWithPhotos,
                 totalCalories: totalCalories.toFixed(1)
             });
         } catch (error) {
@@ -999,5 +1040,150 @@ exports.setApp = function( app, client )
 			apiKeyLastFour: process.env.SENDGRID_API_KEY ? 
 			`...${process.env.SENDGRID_API_KEY.slice(-4)}` : 'Not configured'
 		});
+    });
+
+    // Add or update meal photo
+    app.post('/api/meal/photo', async (req, res) => {
+      try {
+        const { userId, date, mealType, photoBase64 } = req.body;
+
+        if (!userId || !date || !mealType || !photoBase64) {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'Missing required fields' 
+          });
+        }
+
+        // Upload to Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(photoBase64, {
+          folder: 'meal_photos',
+          transformation: [
+            { width: 800, height: 800, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' }
+          ]
+        });
+
+        // Find or create meal
+        const mealDate = new Date(date);
+        mealDate.setHours(0, 0, 0, 0); // Set to start of day
+        const nextDay = new Date(mealDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        let meal = await Meal.findOne({
+          user: userId,
+          date: {
+            $gte: mealDate,
+            $lt: nextDay
+          },
+          mealTime: mealType
+        });
+
+        if (!meal) {
+          meal = new Meal({
+            user: userId,
+            date: mealDate,
+            mealTime: mealType,
+            foods: []
+          });
+        }
+
+        // If meal already had a photo, delete old one from Cloudinary
+        if (meal.photo && meal.photo.publicId) {
+          await cloudinary.uploader.destroy(meal.photo.publicId);
+        }
+
+        meal.photo = {
+          url: uploadResponse.secure_url,
+          publicId: uploadResponse.public_id
+        };
+
+        await meal.save();
+
+        res.json({
+          success: true,
+          meal
+        });
+
+      } catch (error) {
+        console.error('Error handling meal photo:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to handle meal photo'
+        });
+      }
+    });
+
+    // Delete meal photo
+    app.delete('/api/meal/photo', async (req, res) => {
+      try {
+        const { userId, date, mealType } = req.body;
+
+        const mealDate = new Date(date);
+        const meal = await Meal.findOne({
+          user: userId,
+          date: {
+            $gte: new Date(mealDate.setHours(0, 0, 0)),
+            $lt: new Date(mealDate.setHours(23, 59, 59))
+          },
+          mealTime: mealType
+        });
+
+        if (!meal) {
+          return res.status(404).json({
+            success: false,
+            error: 'Meal not found'
+          });
+        }
+
+        if (meal.photo && meal.photo.publicId) {
+          await cloudinary.uploader.destroy(meal.photo.publicId);
+          meal.photo = undefined;
+          await meal.save();
+        }
+
+        res.json({
+          success: true,
+          meal
+        });
+
+      } catch (error) {
+        console.error('Error deleting meal photo:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to delete meal photo'
+        });
+      }
+    });
+
+    // Get meal details including photo
+    app.get('/api/meal/:userId/:date/:mealType', async (req, res) => {
+      try {
+        const { userId, date, mealType } = req.params;
+        const mealDate = new Date(date);
+        mealDate.setHours(0, 0, 0, 0); // Set to start of day
+        const nextDay = new Date(mealDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        const meal = await Meal.findOne({
+          user: userId,
+          date: {
+            $gte: mealDate,
+            $lt: nextDay
+          },
+          mealTime: mealType
+        }).populate('foods');
+
+        res.json({
+          success: true,
+          meal
+        });
+
+      } catch (error) {
+        console.error('Error fetching meal:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to fetch meal'
+        });
+      }
     });
 }

@@ -15,8 +15,11 @@ mongoose.connect(uri)
   .catch(err => console.log(err));
 
 const app = express();
+
+// Increase payload size limit for JSON and URL-encoded bodies
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cors());
-app.use(bodyParser.json());
 
 app.use((req, res, next) =>
 {

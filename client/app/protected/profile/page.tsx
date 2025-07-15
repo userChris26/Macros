@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Edit2 } from "lucide-react";
+import { Edit2, Loader2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { decodeJWT, getApiUrl } from "@/lib/utils";
 import Cookies from 'js-cookie';
@@ -26,7 +26,9 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -132,6 +134,64 @@ export default function ProfilePage() {
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('profilePic', file);
+
+    try {
+      const token = Cookies.get('jwtToken');
+      if (!token) return;
+
+      const response = await fetch(`${getApiUrl()}/api/upload-profile-pic/${profile.userId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Update profile with new picture URL
+      setProfile(prev => prev ? {
+        ...prev,
+        profilePic: data.user.profilePic
+      } : null);
+
+      toast.success('Profile picture updated successfully');
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      toast.error('Failed to upload profile picture');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (!profile) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
@@ -152,23 +212,35 @@ export default function ProfilePage() {
           <Card className="p-4">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
-                <Avatar size="xl">
+                <Avatar className="h-32 w-32">
                   {profile.profilePic ? (
                     <AvatarImage src={profile.profilePic} alt={`${profile.firstName}'s profile`} />
                   ) : (
-                    <AvatarFallback className="text-lg">
+                    <AvatarFallback className="text-4xl">
                       {profile.firstName[0]}
                       {profile.lastName[0]}
                     </AvatarFallback>
                   )}
                 </Avatar>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
                 <Button 
                   size="icon" 
                   variant="outline" 
                   className="absolute bottom-0 right-0 rounded-full"
-                  onClick={() => toast.info('Profile picture upload coming soon!')}
+                  onClick={handleUploadClick}
+                  disabled={isUploading}
                 >
-                  <Edit2 className="h-4 w-4" />
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Edit2 className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               <div className="text-center">
