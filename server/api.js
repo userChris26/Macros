@@ -8,35 +8,35 @@ const User = require('./models/user');
 
 // Initialize SendGrid
 if (!process.env.SENDGRID_API_KEY) {
-  console.error('❌ Missing SENDGRID_API_KEY in .env');
+  	console.error('❌ Missing SENDGRID_API_KEY in .env');
 } else {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log('✅ SendGrid API key loaded');
+	sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+	console.log('✅ SendGrid API key loaded');
 }
 
 if (!process.env.SENDGRID_SENDER_EMAIL) {
-  console.error('❌ Missing SENDGRID_SENDER_EMAIL in .env');
+  	console.error('❌ Missing SENDGRID_SENDER_EMAIL in .env');
 } else {
-  console.log('✅ SendGrid sender email configured:', process.env.SENDGRID_SENDER_EMAIL);
+	console.log('✅ SendGrid sender email configured:', process.env.SENDGRID_SENDER_EMAIL);
 }
 
 //Define schemas for social network features
 const UserSchema = new mongoose.Schema({
-  firstName:  { type: String, required: true },
-  lastName:   { type: String, required: true },
-  email:      { type: String, required: true, unique: true },
-  password:   { type: String, required: true },
-  profilePic: { type: String },
-  bio:        { type: String },
-  createdAt:  { type: Date,   default: Date.now },
-  resetToken: { type: String },
-  resetTokenExpiry: { type: Date }
+	firstName:  { type: String, required: true },
+	lastName:   { type: String, required: true },
+	email:      { type: String, required: true, unique: true },
+	password:   { type: String, required: true },
+	profilePic: { type: String },
+	bio:        { type: String },
+	createdAt:  { type: Date,   default: Date.now },
+	resetToken: { type: String },
+	resetTokenExpiry: { type: Date }
 });
 
 const NetworkSchema = new mongoose.Schema({
-  followerId:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  followingId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  createdAt:   { type: Date, default: Date.now }
+	followerId:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+	followingId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+	createdAt:   { type: Date, default: Date.now }
 });
 
 // Create models
@@ -47,30 +47,30 @@ const Meal = mongoose.model('Meal', UserSchema);
 
 // USDA Food API search function
 async function searchUSDAFood(query) {
-  const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
-  console.log('Searching USDA API for:', query);
-  console.log('Using API key:', apiKey ? 'API key loaded' : 'No API key');
-  
-  try {
-    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=25`;
-    console.log('USDA API URL:', url);
-    
-    const response = await fetch(url);
-    console.log('USDA API response status:', response.status);
-    
-    if (!response.ok) {
-      throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('USDA API response received, foods count:', data.foods ? data.foods.length : 0);
-    
-    return data.foods || [];
-  } catch (error) {
-    console.error('Error searching USDA API:', error);
-    throw error;
-  }
-}
+	const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
+	console.log('Searching USDA API for:', query);
+	console.log('Using API key:', apiKey ? 'API key loaded' : 'No API key');
+	
+	try {
+		const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=25`;
+		console.log('USDA API URL:', url);
+		
+		const response = await fetch(url);
+		console.log('USDA API response status:', response.status);
+		
+		if (!response.ok) {
+		throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
+		}
+		
+		const data = await response.json();
+		console.log('USDA API response received, foods count:', data.foods ? data.foods.length : 0);
+		
+		return data.foods || [];
+	} catch (error) {
+		console.error('Error searching USDA API:', error);
+		throw error;
+	}
+	}
 
 
 exports.setApp = function( app, client )
@@ -82,7 +82,8 @@ exports.setApp = function( app, client )
 		// incoming: email, password, firstName, lastName
 		// outgoing: error
 
-    var blake2 = require('blake2');
+    	var blake2 = require('blake2');
+
 		const { userEmail, userPassword, userFirstName, userLastName } = req.body;
 		var ret;
 		
@@ -95,35 +96,21 @@ exports.setApp = function( app, client )
 			}
 			else
 			{
-        // Hash the password
-        var hash = blake2.createHash('blake2b');
-        hash.update(Buffer.from(userPassword));
+				// Hash the password
+				var hash = blake2.createHash('blake2b');
+				hash.update(Buffer.from(userPassword));
 
 				const newUser = new User(
 				{ 
-          email: userEmail,
-          password: hash.digest('hex'),
-          firstName: userFirstName,
-          lastName: userLastName,
-          isVerified: false
+					email: userEmail,
+					password: hash.digest('hex'),
+					firstName: userFirstName,
+					lastName: userLastName,
+					isVerified: false
 				});
 				await newUser.save();
 
 				ret = { error: '' };
-
-				// const msg = {
-				// to: email,
-				// from: 'noreply@email.com',
-				// subject: 'Macro - Verify your email',
-				// text: `Copy and paste the address below to verify your account. 
-				// 	http://${req.headers.host}/verify-email?token=${user.emailToken}`,
-				// html: `<h1>Hello</h1>
-				// 	<p>Thank you for registering on our site.</p>
-				// 	<p>Please click the link below to verify your account.</p>
-				// 	<a href="http://${req.headers.host}/verify-email?token=${user.emailToken}">Verify your account</a>`
-				// };
-				
-				// await sgMain.send(msg);
 			}
 		}
 		catch(e)
@@ -138,23 +125,23 @@ exports.setApp = function( app, client )
 	app.post('/api/login', async (req, res) => {
 		// incoming: email, password
 		// outgoing: accessToken, error
-    
-    var blake2 = require('blake2');
+
+		var blake2 = require('blake2');
 
 		const { userEmail, userPassword } = req.body;
 		var ret;
 
 		// Hash the password
-    var hash = blake2.createHash('blake2b');
-    hash.update(Buffer.from(userPassword));
-		
-    const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
+		var hash = blake2.createHash('blake2b');
+		hash.update(Buffer.from(userPassword));
+
+		const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
 		try {
 			if (!result) {
 				ret = { error: "Login/Password incorrect" };
 			} else {
 				const token = require("./createJWT.js");
-				const tokenData = token.createToken(result);
+				const tokenData = result.isVerified ? token.createToken(result) : null;
 
 				if (tokenData.error) {
 					ret = { error: tokenData.error };
@@ -168,121 +155,100 @@ exports.setApp = function( app, client )
 		} catch(e) {
 			ret = { error: e.message };
 		}
-		
+
 		res.status(200).json(ret);
 	});
 
-	app.post('/api/updateaccount', async (req, res) =>
+	app.post('/api/test-jwt', async (req, res) =>
+	{
+		// incoming: userJwt
+		// outgoing: error
+
+		var token = require('./createJWT.js');
+
+		const { userJwt } = req.body;
+		
+		// Token Expiration Check
+		try
 		{
-			// incoming: userId, userFirstName, userLastName, userEmail, userJwt
-			// outgoing: error
+			if(token.isExpired(userJwt))
+			{
+				var ret = {error: 'The JWT is no longer valid', userJwt: ''};
+				res.status(200).json(ret);
+				return;
+			}
+		}
+		catch(e)
+		{
+			console.log(e.message);
+		}
 
-			var token = require('./createJWT.js');
-			
-			const { userId, userFirstName, userLastName, userEmail, userJwt } = req.body;
-			
-			try
-			{
-				if(token.isExpired(userJwt))
-				{
-					var ret = {error: 'The JWT is no longer valid', userJwt: ''};
-					res.status(200).json(ret);
-					return;
-				}
-			}
-			catch(e)
-			{
-				console.log(e.message);
-			}
-			
-			var error = '';
+		var error = '';
 
-			try
-			{
-				result = await User.updateOne(
-					{_id:ObjectId.createFromHexString(userId)},
-					{
-						$set: { email: userEmail, firstName: userFirstName, lastName: userLastName }
-					}
-				);
-				
-			}
-			catch(e)
-			{
-				error = e.toString();
-			}
-
-			var refreshedToken = null;
-			try
-			{
-				refreshedToken = token.refresh(userJwt);
-			}
-			catch(e)
-			{
-				console.log(e.message);
-			}
-
-			var ret = { error: error, userJwt: refreshedToken };
-			res.status(200).json(ret);
-		});
+		console.log('Token not expired.')
+		
+		// Token Refresh Attempt
+		var refreshedToken = null;
+		try
+		{
+			refreshedToken = token.refresh(userJwt);
+		}
+		catch(e)
+		{
+			console.log(e.message);
+		}
+		
+		var ret = { error: error, userJwt: refreshedToken };
+		res.status(200).json(ret);
+	});
 
 
 
 	// ─── Social Network Endpoints
-
 	// Search users
 	app.get('/api/users/search', async (req, res) => {
-	  try {
-	    const { q } = req.query;
-	    
-	    if (!q) {
-	      return res.status(400).json({ error: 'Search query is required' });
-	    }
+		try {
+			const { q } = req.query;
 
-	    // Search by first name, last name, or email
-	    const users = await User.find({
-	      $or: [
-	        { firstName: { $regex: q, $options: 'i' } },
-	        { lastName: { $regex: q, $options: 'i' } },
-	        { email: { $regex: q, $options: 'i' } }
-	      ]
-	    })
-	    .select('firstName lastName email profilePic')
-	    .limit(10);
+			if (!q) {
+				return res.status(400).json({ error: 'Search query is required' });
+			}
 
-	    // Transform the response to match our standardized format
-	    const transformedUsers = users.map(user => ({
-	      id: user._id,
-	      firstName: user.firstName,
-	      lastName: user.lastName,
-	      email: user.email,
-	      profilePic: user.profilePic || null
-	    }));
+			// Search by first name, last name, or email
+			const users = await User.find({
+				$or: [
+				{ firstName: { $regex: q, $options: 'i' } },
+				{ lastName: { $regex: q, $options: 'i' } },
+				{ email: { $regex: q, $options: 'i' } }
+				]
+			})
+			.select('firstName lastName email profilePic')
+			.limit(10);
 
-	    res.json({ users: transformedUsers, error: '' });
-	  } catch (err) {
-	    console.error('User search error:', err);
-	    res.status(500).json({ error: 'Failed to search users' });
-	  }
+			// Transform the response to match our standardized format
+			const transformedUsers = users.map(user => ({
+				id: user._id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+				profilePic: user.profilePic || null
+			}));
+
+			res.json({ users: transformedUsers, error: '' });
+		} catch (err) {
+			console.error('User search error:', err);
+			res.status(500).json({ error: 'Failed to search users' });
+		}
 	});
 
 	// Follow a user
 	app.post('/api/follow', async (req, res) => {
-		// var token = require('./createJWT.js');
+		
 		var ret;
 		var error = '';
 
 		const { followerId, followingId, userJwt } = req.body;
 		try {
-			// try {
-			// 	if (token.isExpired(userJwt)) {
-			// 		ret.status(200).json({error: 'The JWT is no longer valid', userJwt: ''});
-			// 		return;
-			// 	}
-			// }
-			// catch(e) {
-			// 	error = e.toString();
-			// }
 			
 			const existing = await Network.findOne({ followerId, followingId });
 			if (existing) {
@@ -297,18 +263,10 @@ exports.setApp = function( app, client )
 				error = '';
 			}
 
-			// var refreshedToken = null;
-			// try {
-			// 	refreshedToken = token.refresh(userJwt);
-			// }
-			// catch(e) {
-			// 	error = e.toString();
-			// }
-
-			ret = { error: error, /*userJwt: refreshedToken*/ };
+			ret = { error: error };
 		} catch (err) {
 			console.error(err);
-			// res.status(500).json({ error: 'Could not follow user' });
+			res.status(500).json({ error: 'Could not follow user' });
 		}
 
 		res.status(200).json(ret);
@@ -316,179 +274,167 @@ exports.setApp = function( app, client )
 
 	// Unfollow a user
 	app.delete('/api/follow', async (req, res) => {
-	try {
-		const { followerId, followingId } = req.body;
-		// Check if the connection exists before trying to delete
-		const existing = await Network.findOne({ followerId, followingId });
-		if (!existing) {
-			return res.json({ error: 'Not following this user' });
+		try {
+			const { followerId, followingId } = req.body;
+			
+			// Check if the connection exists before trying to delete
+			const existing = await Network.findOne({ followerId, followingId });
+			if (!existing) {
+				return res.json({ error: 'Not following this user' });
+			}
+			
+			// Check if trying to unfollow self
+			if (followerId === followingId) {
+				return res.json({ error: 'Cannot unfollow yourself' });
+			}
+
+			await Network.findOneAndDelete({ followerId, followingId });
+			
+			res.json({ error: '' });
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ error: 'Could not unfollow user' });
 		}
-		// Check if trying to unfollow self
-		if (followerId === followingId) {
-			return res.json({ error: 'Cannot unfollow yourself' });
-		}
-		await Network.findOneAndDelete({ followerId, followingId });
-		res.json({ error: '' });
-  	} catch (err) {
-    	console.error(err);
-    	res.status(500).json({ error: 'Could not unfollow user' });
-  	}
 	});
 
 	// Get followers for a user
 	app.get('/api/followers/:userId', async (req, res) => {
-	try {
-		const followers = await Network.find({ followingId: req.params.userId })
-									.populate('followerId', 'firstName lastName email profilePic')
-									.sort({ createdAt: -1 });
-		res.json({ followers, error: '' });
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: 'Could not fetch followers' });
-	}
+		try {
+			const followers = await Network.find({ followingId: req.params.userId })
+										.populate('followerId', 'firstName lastName email profilePic')
+										.sort({ createdAt: -1 });
+			res.json({ followers, error: '' });
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ error: 'Could not fetch followers' });
+		}
 	});
 
 	// Get users being followed by a user
 	app.get('/api/following/:userId', async (req, res) => {
-	try {
-		const following = await Network.find({ followerId: req.params.userId })
-									.populate('followingId', 'firstName lastName email profilePic')
-									.sort({ createdAt: -1 });
-		res.json({ following, error: '' });
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: 'Could not fetch following' });
-	}
+		try {
+			const following = await Network.find({ followerId: req.params.userId })
+										.populate('followingId', 'firstName lastName email profilePic')
+										.sort({ createdAt: -1 });
+			res.json({ following, error: '' });
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ error: 'Could not fetch following' });
+		}
 	});
 
 
-
 	// ─── Profile Management Endpoints
-
 	// Upload profile picture
 	app.post('/api/upload-profile-pic/:userId', upload.single('profilePic'), async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		if (!req.file) {
-		return res.status(400).json({ error: 'No file uploaded' });
+		try {
+			const { userId } = req.params;
+			
+			if (!req.file) {
+				return res.status(400).json({ error: 'No file uploaded' });
+			}
+
+			// Update user's profile picture URL in database
+			const updatedUser = await User.findByIdAndUpdate(
+				userId,
+				{ profilePic: req.file.path },
+				{ new: true }
+			);
+
+			if (!updatedUser) {
+				return res.status(404).json({ error: 'User not found' });
+			}
+
+			res.json({
+			message: 'Profile picture uploaded successfully',
+				profilePicUrl: req.file.path,
+				user: {
+					id: updatedUser._id,
+					firstName: updatedUser.firstName,
+					lastName: updatedUser.lastName,
+					email: updatedUser.email,
+					profilePic: updatedUser.profilePic
+				},
+				error: ''
+			});
+		} catch (err) {
+			console.error('Upload error:', err);
+			res.status(500).json({ error: 'Failed to upload profile picture' });
 		}
-
-		// Update user's profile picture URL in database
-		const updatedUser = await User.findByIdAndUpdate(
-		userId,
-		{ profilePic: req.file.path },
-		{ new: true }
-		);
-
-		if (!updatedUser) {
-		return res.status(404).json({ error: 'User not found' });
-		}
-
-		res.json({
-		message: 'Profile picture uploaded successfully',
-		profilePicUrl: req.file.path,
-		user: {
-			id: updatedUser._id,
-			firstName: updatedUser.firstName,
-			lastName: updatedUser.lastName,
-			email: updatedUser.email,
-			profilePic: updatedUser.profilePic
-		},
-		error: ''
-		});
-	} catch (err) {
-		console.error('Upload error:', err);
-		res.status(500).json({ error: 'Failed to upload profile picture' });
-	}
 	});
 
 	// Delete profile picture
 	app.delete('/api/delete-profile-pic/:userId', async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		const user = await User.findById(userId);
-		if (!user) {
-		return res.status(404).json({ error: 'User not found' });
+		try {
+			const { userId } = req.params;
+
+			const user = await User.findById(userId);
+			if (!user) {
+				return res.status(404).json({ error: 'User not found' });
+			}
+
+			// Delete from Cloudinary if exists
+			if (user.profilePic) {
+				const publicId = user.profilePic.split('/').pop().split('.')[0];
+				await cloudinary.uploader.destroy(`profile_pictures/${publicId}`);
+			}
+
+			// Update user in database
+			const updatedUser = await User.findByIdAndUpdate(
+				userId,
+				{ profilePic: null },
+				{ new: true }
+			);
+
+			res.json({
+				message: 'Profile picture deleted successfully',
+				user: {
+					id: updatedUser._id,
+					firstName: updatedUser.firstName,
+					lastName: updatedUser.lastName,
+					email: updatedUser.email,
+					profilePic: updatedUser.profilePic
+				},
+				error: ''
+			});
+		} catch (err) {
+			console.error('Delete error:', err);
+			res.status(500).json({ error: 'Failed to delete profile picture' });
 		}
-
-		// Delete from Cloudinary if exists
-		if (user.profilePic) {
-		const publicId = user.profilePic.split('/').pop().split('.')[0];
-		await cloudinary.uploader.destroy(`profile_pictures/${publicId}`);
-		}
-
-		// Update user in database
-		const updatedUser = await User.findByIdAndUpdate(
-		userId,
-		{ profilePic: null },
-		{ new: true }
-		);
-
-		res.json({
-		message: 'Profile picture deleted successfully',
-		user: {
-			id: updatedUser._id,
-			firstName: updatedUser.firstName,
-			lastName: updatedUser.lastName,
-			email: updatedUser.email,
-			profilePic: updatedUser.profilePic
-		},
-		error: ''
-		});
-	} catch (err) {
-		console.error('Delete error:', err);
-		res.status(500).json({ error: 'Failed to delete profile picture' });
-	}
 	});
 
 	// Get user profile (including profile picture)
 	app.get('/api/user/:userId', async (req, res) => {
-	try {
-		const user = await User.findById(req.params.userId).select('-password');
-		if (!user) {
-			return res.status(404).json({ error: 'User not found' });
-		}
+		try {
+			const user = await User.findById(req.params.userId).select('-password');
+			if (!user) {
+				return res.status(404).json({ error: 'User not found' });
+			}
 
-		res.json({
-		user: {
-			id: user._id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			email: user.email,
-			profilePic: user.profilePic,
-			bio: user.bio,
-			createdAt: user.createdAt
-		},
-		error: ''
-		});
-	} catch (err) {
-		console.error(err);
-		res.status(500).json({ error: 'Could not fetch user profile' });
-	}
+			res.json({
+				user: {
+					id: user._id,
+					firstName: user.firstName,
+					lastName: user.lastName,
+					email: user.email,
+					profilePic: user.profilePic,
+					bio: user.bio,
+					createdAt: user.createdAt
+				},
+				error: ''
+			});
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ error: 'Could not fetch user profile' });
+		}
 	});
 
 	// Update user profile
 	app.put('/api/user/:userId', async (req, res) => {
-		// var token = require('./createJWT.js');
 
 		try {
 			const { userId } = req.params;
 			const { firstName, lastName, bio, userJwt } = req.body;
-	
-			// try
-			// {
-			// 	if (token.isExpired(userJwt))
-			// 	{
-			// 		ret.status(200).json({error: 'The JWT is no longer valid', userJwt: ''});
-			// 		return;
-			// 	}
-			// }
-			// catch(e)
-			// {
-			// 	console.log(e.message);
-			// }
 
 			const updatedUser = await User.findByIdAndUpdate(
 				userId,
@@ -500,16 +446,6 @@ exports.setApp = function( app, client )
 				return res.status(404).json({ error: 'User not found' });
 			}
 
-			// var refreshedToken = null;
-			// try
-			// {
-			// 	refreshedToken = token.refresh(userJwt);
-			// }
-			// catch(e)
-			// {
-			// 	console.log(e.message);
-			// }
-
 			res.json({
 				message: 'Profile updated successfully',
 				user: {
@@ -520,44 +456,13 @@ exports.setApp = function( app, client )
 					profilePic: updatedUser.profilePic,
 					bio: updatedUser.bio
 				},
-				error: '' // ADD JWT
+				error: ''
 			});
 		} catch (err) {
 			console.error(err);
 			res.status(500).json({ error: 'Could not update profile' });
 		}
 	});
-
-	// app.put('/api/update-password/:userId', async (req, res) => {
-  //   var blake2 = require('blake2');
-		
-  //   try {
-	// 		const { userId } = req.params;
-	// 		const { password } = req.body;
-
-  //     var hash = blake2.createHash('blake2b');
-  //     hash.update(Buffer.from(password));
-
-	// 		const updatedUser = await User.findByIdAndUpdate(
-	// 			userId,
-	// 			{ password:hash.digest('hex') },
-	// 			{ new: true }
-	// 		);//.select('-password');
-
-	// 		if (!updatedUser) {
-	// 			return res.status(404).json({ error: 'User not found' });
-	// 		}
-
-	// 		res.json({
-	// 			message: 'Password updated successfully',
-	// 			error: ''
-	// 		});
-	// 	} catch (err) {
-	// 		console.error(err);
-	// 		res.status(500).json({ error: 'Could not update password' });
-	// 	}
-	// });
-
 
 
 	// ─── Food Endpoints
@@ -782,318 +687,317 @@ exports.setApp = function( app, client )
 
     // Get dashboard stats
     app.get('/api/dashboard/stats/:userId', async (req, res) => {
-      try {
-        const { userId } = req.params;
-        const today = new Date().toISOString().split('T')[0];
+		try {
+			const { userId } = req.params;
+			const today = new Date().toISOString().split('T')[0];
 
-        // Get today's food entries
-        const foodEntries = await FoodEntry.find({
-          userId,
-          dateAdded: today
-        });
+			// Get today's food entries
+			const foodEntries = await FoodEntry.find({
+				userId,
+				dateAdded: today
+			});
 
-        // Calculate total calories
-        const totalCalories = foodEntries.reduce((acc, entry) => 
-          acc + parseFloat(entry.nutrients.calories || '0'), 0
-        );
+			// Calculate total calories
+			const totalCalories = foodEntries.reduce((acc, entry) => 
+				acc + parseFloat(entry.nutrients.calories || '0'), 0
+			);
 
-        // Get following count
-        const followingCount = await Network.countDocuments({ followerId: userId });
+			// Get following count
+			const followingCount = await Network.countDocuments({ followerId: userId });
 
-        // Get followers count
-        const followersCount = await Network.countDocuments({ followingId: userId });
+			// Get followers count
+			const followersCount = await Network.countDocuments({ followingId: userId });
 
-        res.json({
-          success: true,
-          stats: {
-            totalCalories,
-            totalEntries: foodEntries.length,
-            following: followingCount,
-            followers: followersCount
-          }
-        });
-      } catch (err) {
-        console.error('Error fetching dashboard stats:', err);
-        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
-      }
+			res.json({
+			success: true,
+			stats: {
+				totalCalories,
+				totalEntries: foodEntries.length,
+				following: followingCount,
+				followers: followersCount
+			}
+			});
+		} catch (err) {
+			console.error('Error fetching dashboard stats:', err);
+			res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+		}
     });
 
     // Password Reset Endpoints
     app.post('/api/forgot-password', async (req, res) => {
-      try {
-        const { email } = req.body;
-        
-        // Find user by email
-        const user = await User.findOne({ email });
-        
-        // Don't reveal if user exists or not
-        if (!user) {
-          return res.json({ error: '' }); // Success response even if user not found
-        }
+		try {
+			const { email } = req.body;
 
-        // Generate reset token (valid for 1 hour)
-        const resetToken = require('crypto').randomBytes(32).toString('hex');
-        const resetTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
+			// Find user by email
+			const user = await User.findOne({ email });
 
-        console.log('Generated reset token for', email, ':', {
-          token: resetToken,
-          expiry: resetTokenExpiry.toISOString()
-        });
+			// Don't reveal if user exists or not
+			if (!user) {
+				return res.json({ error: '' }); // Success response even if user not found
+			}
 
-        // Save reset token to user
-        const updatedUser = await User.findByIdAndUpdate(
-          user._id,
-          {
-            resetToken,
-            resetTokenExpiry
-          },
-          { new: true }
-        );
+			// Generate reset token (valid for 1 hour)
+			const resetToken = require('crypto').randomBytes(32).toString('hex');
+			const resetTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
 
-        console.log('Updated user with reset token:', {
-          email: updatedUser.email,
-          tokenSaved: updatedUser.resetToken === resetToken,
-          expiry: updatedUser.resetTokenExpiry.toISOString()
-        });
+			console.log('Generated reset token for', email, ':', {
+				token: resetToken,
+				expiry: resetTokenExpiry.toISOString()
+			});
 
-        // Send email using SendGrid
-        const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${resetToken}`;
-        
-        const msg = {
-          to: email,
-          from: emailConfig.senderEmail,
-          subject: emailConfig.templates.passwordReset.subject,
-          text: emailConfig.templates.passwordReset.generateText(resetUrl),
-          html: emailConfig.templates.passwordReset.generateHtml(resetUrl)
-        };
+			// Save reset token to user
+			const updatedUser = await User.findByIdAndUpdate(
+				user._id,
+				{
+					resetToken,
+					resetTokenExpiry
+				},
+				{ new: true }
+			);
 
-        try {
-          await sgMail.send(msg);
-          console.log('SendGrid email sent successfully');
-          res.json({ error: '' });
-        } catch (sendGridError) {
-          console.error('SendGrid error:', {
-            code: sendGridError.code,
-            message: sendGridError.message,
-            response: sendGridError.response?.body
-          });
-          throw sendGridError;
-        }
-      } catch (err) {
-        console.error('Password reset error:', err);
-        res.status(500).json({ 
-          error: 'Failed to process password reset',
-          details: err.response?.body || err.message
-        });
-      }
+			console.log('Updated user with reset token:', {
+				email: updatedUser.email,
+				tokenSaved: updatedUser.resetToken === resetToken,
+				expiry: updatedUser.resetTokenExpiry.toISOString()
+			});
+
+			// Send email using SendGrid
+			const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${resetToken}`;
+
+			const msg = {
+				to: email,
+				from: emailConfig.senderEmail,
+				subject: emailConfig.templates.passwordReset.subject,
+				text: emailConfig.templates.passwordReset.generateText(resetUrl),
+				html: emailConfig.templates.passwordReset.generateHtml(resetUrl)
+			};
+
+			try {
+				await sgMail.send(msg);
+				console.log('SendGrid email sent successfully');
+				res.json({ error: '' });
+			} catch (sendGridError) {
+				console.error('SendGrid error:', {
+					code: sendGridError.code,
+					message: sendGridError.message,
+					response: sendGridError.response?.body
+				});
+				throw sendGridError;
+			}
+		} catch (err) {
+			console.error('Password reset error:', err);
+			res.status(500).json({ 
+				error: 'Failed to process password reset',
+				details: err.response?.body || err.message
+			});
+		}
     });
 
     // Reset Password with Token
     app.post('/api/reset-password', async (req, res) => {
-      var blake2 = require('blake2');
+		var blake2 = require('blake2');
 
-      try {
-        
-        const { token, newPassword } = req.body;
-        
-        // Hash the password
-        var hash = blake2.createHash('blake2b');
-        hash.update(Buffer.from(newPassword));
-        
-        console.log('Reset password attempt with token:', token);
-        
-        // Find user with valid reset token
-        const user = await User.findOne({
-          resetToken: token,
-          resetTokenExpiry: { $gt: Date.now() }
-        });
+		try {
+			const { token, newPassword } = req.body;
+			
+			// Hash the password
+			var hash = blake2.createHash('blake2b');
+			hash.update(Buffer.from(newPassword));
+			
+			console.log('Reset password attempt with token:', token);
+			
+			// Find user with valid reset token
+			const user = await User.findOne({
+			resetToken: token,
+			resetTokenExpiry: { $gt: Date.now() }
+			});
 
-        if (!user) {
-          // Debug why the token is invalid
-          const userWithToken = await User.findOne({ resetToken: token });
-          if (userWithToken) {
-            console.log('Token found but expired. Token expiry:', userWithToken.resetTokenExpiry, 'Current time:', Date.now());
-          } else {
-            console.log('No user found with token');
-          }
-          return res.status(400).json({ error: 'Invalid or expired reset token' });
-        }
+			if (!user) {
+				// Debug why the token is invalid
+				const userWithToken = await User.findOne({ resetToken: token });
+				if (userWithToken) {
+					console.log('Token found but expired. Token expiry:', userWithToken.resetTokenExpiry, 'Current time:', Date.now());
+				} else {
+					console.log('No user found with token');
+				}
+				return res.status(400).json({ error: 'Invalid or expired reset token' });
+			}
 
-        console.log('Found user for password reset:', user.email);
+			console.log('Found user for password reset:', user.email);
 
-        // Update password and clear reset token
-        await User.findByIdAndUpdate(user._id, {
-          password: hash.digest('hex'),
-          resetToken: null,
-          resetTokenExpiry: null
-        });
+			// Update password and clear reset token
+			await User.findByIdAndUpdate(user._id, {
+			password: hash.digest('hex'),
+			resetToken: null,
+			resetTokenExpiry: null
+			});
 
-        // Send confirmation email
-        const msg = {
-          to: user.email,
-          from: emailConfig.senderEmail,
-          subject: 'Your password has been reset',
-          text: 'Your password for Macros has been successfully reset.',
-          html: `
-            <h1>Password Reset Successful</h1>
-            <p>Your password for Macros has been successfully reset.</p>
-            <p>If you did not make this change, please contact support immediately.</p>
-          `
-        };
+			// Send confirmation email
+			const msg = {
+			to: user.email,
+			from: emailConfig.senderEmail,
+			subject: 'Your password has been reset',
+			text: 'Your password for Macros has been successfully reset.',
+			html: `
+				<h1>Password Reset Successful</h1>
+				<p>Your password for Macros has been successfully reset.</p>
+				<p>If you did not make this change, please contact support immediately.</p>
+			`
+			};
 
-        try {
-          await sgMail.send(msg);
-          console.log('Password reset confirmation email sent successfully');
-        } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError);
-          // Don't return error to client - password was still reset successfully
-        }
+			try {
+			await sgMail.send(msg);
+				console.log('Password reset confirmation email sent successfully');
+			} catch (emailError) {
+				console.error('Failed to send confirmation email:', emailError);
+				// Don't return error to client - password was still reset successfully
+			}
 
-        res.json({ error: '' });
-      } catch (err) {
-        console.error('Password reset error:', err);
-        res.status(500).json({ error: 'Failed to reset password' });
-      }
+			res.json({ error: '' });
+		} catch (err) {
+			console.error('Password reset error:', err);
+			res.status(500).json({ error: 'Failed to reset password' });
+		}
     });
 
 	// Email Verification Endpoints
     app.post('/api/send-email-verification', async (req, res) => {
-      try {
-        const { email } = req.body;
-        
-        // Find user by email
-        const user = await User.findOne({ email });
-        
-        // Don't reveal if user exists or not
-        if (!user) {
-          return res.json({ error: '' }); // Success response even if user not found
-        }
+		try {
+			const { email } = req.body;
+			
+			// Find user by email
+			const user = await User.findOne({ email });
+			
+			// Don't reveal if user exists or not
+			if (!user) {
+				return res.json({ error: '' }); // Success response even if user not found
+			}
 
-        // Generate reset token (valid for 1 hour)
-        const verifyToken = require('crypto').randomBytes(32).toString('hex');
-        const verifyTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
+			// Generate reset token (valid for 1 hour)
+			const verifyToken = require('crypto').randomBytes(32).toString('hex');
+			const verifyTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
 
-        console.log('Generated verification token for', email, ':', {
-          token: verifyToken,
-          expiry: verifyTokenExpiry.toISOString()
-        });
+			console.log('Generated verification token for', email, ':', {
+				token: verifyToken,
+				expiry: verifyTokenExpiry.toISOString()
+			});
 
-        // Save verification token to user
-        const updatedUser = await User.findByIdAndUpdate(
-          user._id,
-          {
-            verifyToken,
-            verifyTokenExpiry
-          },
-          { new: true }
-        );
+			// Save verification token to user
+			const updatedUser = await User.findByIdAndUpdate(
+				user._id,
+				{
+					verifyToken,
+					verifyTokenExpiry
+				},
+				{ new: true }
+			);
 
-        console.log('Updated user with verification token:', {
-          email: updatedUser.email,
-          tokenSaved: updatedUser.verifyToken === verifyToken,
-          expiry: updatedUser.verifyTokenExpiry.toISOString()
-        });
+			console.log('Updated user with verification token:', {
+				email: updatedUser.email,
+				tokenSaved: updatedUser.verifyToken === verifyToken,
+				expiry: updatedUser.verifyTokenExpiry.toISOString()
+			});
 
-        // Send email using SendGrid
-        const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
-        
-        const msg = {
-          to: email,
-          from: emailConfig.senderEmail,
-          subject: emailConfig.templates.emailVerify.subject,
-          text: emailConfig.templates.emailVerify.generateText(verifyUrl),
-          html: emailConfig.templates.emailVerify.generateHtml(verifyUrl)
-        };
+			// Send email using SendGrid
+			const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
+			
+			const msg = {
+				to: email,
+				from: emailConfig.senderEmail,
+				subject: emailConfig.templates.emailVerify.subject,
+				text: emailConfig.templates.emailVerify.generateText(verifyUrl),
+				html: emailConfig.templates.emailVerify.generateHtml(verifyUrl)
+			};
 
-        try {
-          await sgMail.send(msg);
-          console.log('SendGrid email sent successfully');
-          res.json({ error: '' });
-        } catch (sendGridError) {
-          console.error('SendGrid error:', {
-            code: sendGridError.code,
-            message: sendGridError.message,
-            response: sendGridError.response?.body
-          });
-          throw sendGridError;
-        }
-      } catch (err) {
-        console.error('Email verification error:', err);
-        res.status(500).json({ 
-          error: 'Failed to process email verification',
-          details: err.response?.body || err.message
-        });
-      }
+			try {
+				await sgMail.send(msg);
+				console.log('SendGrid email sent successfully');
+				res.json({ error: '' });
+			} catch (sendGridError) {
+				console.error('SendGrid error:', {
+					code: sendGridError.code,
+					message: sendGridError.message,
+					response: sendGridError.response?.body
+				});
+				throw sendGridError;
+			}
+		} catch (err) {
+			console.error('Email verification error:', err);
+			res.status(500).json({ 
+			error: 'Failed to process email verification',
+			details: err.response?.body || err.message
+			});
+		}
     });
 
     // Verify Email with Token
     app.post('/api/verify-email', async (req, res) => {
-      try {
-        const { token } = req.body;
-        
-        console.log('Verify email attempt with token:', token);
-        
-        // Find user with valid verification token
-        const user = await User.findOne({
-          verifyToken: token,
-          verifyTokenExpiry: { $gt: Date.now() }
-        });
+		try {
+			const { token } = req.body;
+			
+			console.log('Verify email attempt with token:', token);
+			
+			// Find user with valid verification token
+			const user = await User.findOne({
+				verifyToken: token,
+				verifyTokenExpiry: { $gt: Date.now() }
+			});
 
-        if (!user) {
-          // Debug why the token is invalid
-          const userWithToken = await User.findOne({ verifyToken: token });
-          if (userWithToken) {
-            console.log('Token found but expired. Token expiry:', userWithToken.verifyTokenExpiry, 'Current time:', Date.now());
-          } else {
-            console.log('No user found with token');
-          }
-          return res.status(400).json({ error: 'Invalid or expired reset token' });
-        }
+			if (!user) {
+				// Debug why the token is invalid
+				const userWithToken = await User.findOne({ verifyToken: token });
+				if (userWithToken) {
+					console.log('Token found but expired. Token expiry:', userWithToken.verifyTokenExpiry, 'Current time:', Date.now());
+				} else {
+					console.log('No user found with token');
+				}
+				return res.status(400).json({ error: 'Invalid or expired reset token' });
+			}
 
-        console.log('Found user for email verification:', user.email);
+			console.log('Found user for email verification:', user.email);
 
-        // Update password and clear reset token
-        await User.findByIdAndUpdate(user._id, {
-          isVerified: true,
-          verifyToken: null,
-          verifyTokenExpiry: null
-        });
+			// Update password and clear reset token
+			await User.findByIdAndUpdate(user._id, {
+				isVerified: true,
+				verifyToken: null,
+				verifyTokenExpiry: null
+			});
 
-        // Send confirmation email
-        const msg = {
-          to: user.email,
-          from: emailConfig.senderEmail,
-          subject: 'Your email has been verified',
-          text: 'Your email for Macros has been successfully verified.',
-          html: `
-            <h1>Email Verification Successful</h1>
-            <p>Your email for Macros has been successfully verified.</p>
-            <p>If you did not make this change, please contact support immediately.</p>
-          `
-        };
+			// Send confirmation email
+			const msg = {
+				to: user.email,
+				from: emailConfig.senderEmail,
+				subject: 'Your email has been verified',
+				text: 'Your email for Macros has been successfully verified.',
+				html: `
+					<h1>Email Verification Successful</h1>
+					<p>Your email for Macros has been successfully verified.</p>
+					<p>If you did not make this change, please contact support immediately.</p>
+				`
+			};
 
-        try {
-          await sgMail.send(msg);
-          console.log('Email verification confirmation email sent successfully');
-        } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError);
-          // Don't return error to client - email was still verified successfully
-        }
+			try {
+				await sgMail.send(msg);
+				console.log('Email verification confirmation email sent successfully');
+			} catch (emailError) {
+				console.error('Failed to send confirmation email:', emailError);
+				// Don't return error to client - email was still verified successfully
+			}
 
-        res.json({ error: '' });
-      } catch (err) {
-        console.error('Email verification error:', err);
-        res.status(500).json({ error: 'Failed to verify email' });
-      }
+			res.json({ error: '' });
+		} catch (err) {
+			console.error('Email verification error:', err);
+			res.status(500).json({ error: 'Failed to verify email' });
+		}
     });
 
     // Test SendGrid Configuration
     app.get('/api/test-email-config', (req, res) => {
-      res.json({
-        sendgridConfigured: !!process.env.SENDGRID_API_KEY,
-        senderEmail: process.env.SENDGRID_SENDER_EMAIL || 'Not configured',
-        apiKeyLastFour: process.env.SENDGRID_API_KEY ? 
-          `...${process.env.SENDGRID_API_KEY.slice(-4)}` : 'Not configured'
-      });
+		res.json({
+			sendgridConfigured: !!process.env.SENDGRID_API_KEY,
+			senderEmail: process.env.SENDGRID_SENDER_EMAIL || 'Not configured',
+			apiKeyLastFour: process.env.SENDGRID_API_KEY ? 
+			`...${process.env.SENDGRID_API_KEY.slice(-4)}` : 'Not configured'
+		});
     });
 }
