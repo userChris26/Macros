@@ -977,9 +977,9 @@ exports.setApp = function( app, client )
         const msg = {
           to: email,
           from: emailConfig.senderEmail,
-          subject: emailConfig.templates.passwordReset.subject,
-          text: emailConfig.templates.passwordReset.generateText(verifyUrl),
-          html: emailConfig.templates.passwordReset.generateHtml(verifyUrl)
+          subject: emailConfig.templates.emailVerify.subject,
+          text: emailConfig.templates.emailVerify.generateText(verifyUrl),
+          html: emailConfig.templates.emailVerify.generateHtml(verifyUrl)
         };
 
         try {
