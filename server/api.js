@@ -498,9 +498,9 @@ exports.setApp = function( app, client )
         console.log('Full request body:', JSON.stringify(req.body, null, 2));
         
         try {
-            const { userId, fdcId, servingSize, date } = req.body;
+            const { userId, fdcId, servingSize, date, mealType } = req.body;
             
-            console.log('Parsed fields:', { userId, fdcId, servingSize, date });
+            console.log('Parsed fields:', { userId, fdcId, servingSize, date, mealType });
             
             // Validation
             if (!userId || !fdcId || !servingSize) {
@@ -555,6 +555,7 @@ exports.setApp = function( app, client )
                 brandOwner: foodData.brandOwner || '',
                 servingSize: parseFloat(servingSize),
                 servingSizeUnit: 'g',
+                mealType: mealType || 'snack', // Add mealType here
                 nutrients: {
                     calories: nutrients.calories || '0',
                     protein: nutrients.protein || '0', 

@@ -23,6 +23,12 @@ const foodEntrySchema = new mongoose.Schema({
         type: String,
         default: 'g'
     },
+    mealType: {
+        type: String,
+        enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+        required: true,
+        default: 'snack'
+    },
     nutrients: {
         calories: String,
         protein: String,

@@ -11,7 +11,7 @@ import { getApiUrl } from '@/lib/utils';
 interface FoodSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onFoodSelect: (food: any, servingSize: number) => void;
+  onFoodSelect: (food: any, servingSize: number, mealType: string) => void;
 }
 
 export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearchDialogProps) {
@@ -51,9 +51,9 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
     setSelectedFood(food);
   };
 
-  const handleAddFood = () => {
+  const handleAddFood = (mealType: string) => {
     if (selectedFood && servingSize) {
-      onFoodSelect(selectedFood, parseFloat(servingSize));
+      onFoodSelect(selectedFood, parseFloat(servingSize), mealType);
       onOpenChange(false);
       // Reset state
       setSearchQuery('');
@@ -129,26 +129,57 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
 
         {/* Serving Size Input */}
         {selectedFood && (
-          <div className="space-y-2">
-            <Label htmlFor="servingSize">Serving Size (g)</Label>
-            <Input
-              id="servingSize"
-              type="number"
-              min="0"
-              value={servingSize}
-              onChange={(e) => setServingSize(e.target.value)}
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="servingSize">Serving Size (g)</Label>
+              <Input
+                id="servingSize"
+                type="number"
+                min="0"
+                value={servingSize}
+                onChange={(e) => setServingSize(e.target.value)}
+              />
+            </div>
           </div>
         )}
 
-        <DialogFooter>
-          <Button
-            onClick={handleAddFood}
-            disabled={!selectedFood || !servingSize}
-          >
-            Add Food
-          </Button>
-        </DialogFooter>
+        {/* Meal Type Buttons */}
+        {selectedFood && (
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <Button
+              onClick={() => handleAddFood('breakfast')}
+              disabled={!selectedFood || !servingSize}
+              variant="outline"
+              className="w-full"
+            >
+              Add to Breakfast
+            </Button>
+            <Button
+              onClick={() => handleAddFood('lunch')}
+              disabled={!selectedFood || !servingSize}
+              variant="outline"
+              className="w-full"
+            >
+              Add to Lunch
+            </Button>
+            <Button
+              onClick={() => handleAddFood('dinner')}
+              disabled={!selectedFood || !servingSize}
+              variant="outline"
+              className="w-full"
+            >
+              Add to Dinner
+            </Button>
+            <Button
+              onClick={() => handleAddFood('snack')}
+              disabled={!selectedFood || !servingSize}
+              variant="outline"
+              className="w-full"
+            >
+              Add to Snack
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

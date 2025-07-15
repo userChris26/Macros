@@ -19,6 +19,7 @@ interface FoodEntry {
   _id: string;
   foodName: string;
   servingSize: number;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   nutrients: {
     calories: string;
     protein: string;
@@ -28,17 +29,42 @@ interface FoodEntry {
   dateAdded: string;
 }
 
+interface MealSummary {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+interface DailyMacros {
+  total: MealSummary;
+  breakfast: MealSummary;
+  lunch: MealSummary;
+  dinner: MealSummary;
+  snack: MealSummary;
+}
+
+const emptyMealSummary: MealSummary = {
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0
+};
+
+const emptyDailyMacros: DailyMacros = {
+  total: { ...emptyMealSummary },
+  breakfast: { ...emptyMealSummary },
+  lunch: { ...emptyMealSummary },
+  dinner: { ...emptyMealSummary },
+  snack: { ...emptyMealSummary }
+};
+
 export default function FoodLogPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [totalMacros, setTotalMacros] = useState({
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0
-  });
+  const [macros, setMacros] = useState<DailyMacros>(emptyDailyMacros);
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const token = Cookies.get('jwtToken');
@@ -51,7 +77,7 @@ export default function FoodLogPage() {
       return;
     }
     fetchFoodEntries();
-  }, [userId, selectedDate]); // Refetch when date or userId changes
+  }, [userId, selectedDate]);
 
   const fetchFoodEntries = async () => {
     if (!userId) return;
@@ -68,7 +94,7 @@ export default function FoodLogPage() {
       const data = await response.json();
       if (data.success) {
         setFoodEntries(data.foodEntries);
-        calculateTotalMacros(data.foodEntries);
+        calculateMacros(data.foodEntries);
       } else {
         toast.error(data.error || "Failed to fetch food entries");
       }
@@ -80,23 +106,33 @@ export default function FoodLogPage() {
     }
   };
 
-  const calculateTotalMacros = (entries: FoodEntry[]) => {
-    const totals = entries.reduce((acc, entry) => ({
-      calories: acc.calories + parseFloat(entry.nutrients.calories || '0'),
-      protein: acc.protein + parseFloat(entry.nutrients.protein || '0'),
-      carbs: acc.carbs + parseFloat(entry.nutrients.carbohydrates || '0'),
-      fat: acc.fat + parseFloat(entry.nutrients.fat || '0'),
-    }), {
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fat: 0
+  const calculateMacros = (entries: FoodEntry[]) => {
+    const newMacros: DailyMacros = { ...emptyDailyMacros };
+
+    entries.forEach(entry => {
+      const mealType = entry.mealType || 'snack';
+      const calories = parseFloat(entry.nutrients.calories || '0');
+      const protein = parseFloat(entry.nutrients.protein || '0');
+      const carbs = parseFloat(entry.nutrients.carbohydrates || '0');
+      const fat = parseFloat(entry.nutrients.fat || '0');
+
+      // Add to meal-specific totals
+      newMacros[mealType].calories += calories;
+      newMacros[mealType].protein += protein;
+      newMacros[mealType].carbs += carbs;
+      newMacros[mealType].fat += fat;
+
+      // Add to daily totals
+      newMacros.total.calories += calories;
+      newMacros.total.protein += protein;
+      newMacros.total.carbs += carbs;
+      newMacros.total.fat += fat;
     });
 
-    setTotalMacros(totals);
+    setMacros(newMacros);
   };
 
-  const handleFoodSelect = async (food: any, servingSize: number) => {
+  const handleFoodSelect = async (food: any, servingSize: number, mealType: string) => {
     if (!userId) {
       toast.error("User ID not found. Please try logging in again.");
       return;
@@ -112,6 +148,7 @@ export default function FoodLogPage() {
           userId,
           fdcId: food.fdcId,
           servingSize,
+          mealType,
           date: formattedDate
         }),
       });
@@ -141,7 +178,7 @@ export default function FoodLogPage() {
 
       const data = await response.json();
       if (data.success) {
-        await fetchFoodEntries(); // Refresh the list
+        await fetchFoodEntries();
         toast.success("Food entry deleted successfully");
       } else {
         toast.error(data.error || "Failed to delete food entry");
@@ -150,6 +187,51 @@ export default function FoodLogPage() {
       console.error('Error deleting food entry:', error);
       toast.error("Failed to delete food entry");
     }
+  };
+
+  const renderMealSection = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+    const entries = foodEntries.filter(entry => entry.mealType === mealType);
+    const mealMacros = macros[mealType];
+    const capitalizedMealType = mealType.charAt(0).toUpperCase() + mealType.slice(1);
+
+    return (
+      <div className="border rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold">{capitalizedMealType}</h3>
+          <div className="text-sm text-muted-foreground">
+            {mealMacros.calories.toFixed(0)} kcal
+          </div>
+        </div>
+        {entries.length > 0 ? (
+          <div className="space-y-3">
+            {entries.map((entry) => (
+              <div
+                key={entry._id}
+                className="flex items-center justify-between p-3 bg-accent/50 rounded-lg"
+              >
+                <div>
+                  <div className="font-medium">{entry.foodName}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {entry.servingSize}g • {entry.nutrients.calories} kcal
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeleteEntry(entry._id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground py-4">
+            No {mealType} entries yet
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (!userId) {
@@ -192,71 +274,37 @@ export default function FoodLogPage() {
         </Button>
       </div>
       
-      <div className="grid gap-4">
-        {/* Macros Summary Card */}
-        <div className="border rounded-lg p-4">
-          <h2 className="font-semibold mb-2">
-            {isToday ? "Today's" : format(selectedDate, "MMMM d's")} Macros
-          </h2>
-          <div className="grid grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Calories</p>
-              <p className="text-2xl font-bold">{totalMacros.calories.toFixed(0)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Protein</p>
-              <p className="text-2xl font-bold">{totalMacros.protein.toFixed(1)}g</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Carbs</p>
-              <p className="text-2xl font-bold">{totalMacros.carbs.toFixed(1)}g</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Fat</p>
-              <p className="text-2xl font-bold">{totalMacros.fat.toFixed(1)}g</p>
-            </div>
+      {/* Macros Summary Card */}
+      <div className="border rounded-lg p-4">
+        <h2 className="font-semibold mb-2">
+          {isToday ? "Today's" : format(selectedDate, "MMMM d's")} Macros
+        </h2>
+        <div className="grid grid-cols-4 gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Calories</p>
+            <p className="text-2xl font-bold">{macros.total.calories.toFixed(0)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Protein</p>
+            <p className="text-2xl font-bold">{macros.total.protein.toFixed(1)}g</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Carbs</p>
+            <p className="text-2xl font-bold">{macros.total.carbs.toFixed(1)}g</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Fat</p>
+            <p className="text-2xl font-bold">{macros.total.fat.toFixed(1)}g</p>
           </div>
         </div>
+      </div>
 
-        {/* Food Entries List */}
-        <div className="border rounded-lg p-4">
-          <h2 className="font-semibold mb-4">
-            {isToday ? "Today's" : format(selectedDate, "MMMM d's")} Entries
-          </h2>
-          {loading ? (
-            <div className="text-center text-muted-foreground py-8">
-              Loading...
-            </div>
-          ) : foodEntries.length > 0 ? (
-            <div className="space-y-3">
-              {foodEntries.map((entry) => (
-                <div
-                  key={entry._id}
-                  className="flex items-center justify-between p-3 bg-accent/50 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium">{entry.foodName}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {entry.servingSize}g • {entry.nutrients.calories} kcal
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteEntry(entry._id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-muted-foreground py-8">
-              No food entries for {format(selectedDate, 'MMMM d, yyyy')}. 
-              {isToday && " Click \"Add Food Entry\" to get started!"}
-            </div>
-          )}
-        </div>
+      {/* Meal Sections */}
+      <div className="grid gap-6">
+        {renderMealSection('breakfast')}
+        {renderMealSection('lunch')}
+        {renderMealSection('dinner')}
+        {renderMealSection('snack')}
       </div>
 
       <FoodSearchDialog
