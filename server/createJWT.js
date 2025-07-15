@@ -7,6 +7,7 @@ exports.createToken = function (user) {
 
 _createToken = function (user) {
     try {
+        console.log('JWT_SECRET in createJWT.js:', process.env.JWT_SECRET);
         const payload = {
             userId: user._id,
             firstName: user.firstName,
@@ -16,7 +17,7 @@ _createToken = function (user) {
             bio: user.bio || null
         };
 
-        const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET);
+        const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
         return { accessToken };
     }
     catch(e) {
