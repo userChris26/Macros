@@ -142,7 +142,7 @@ export default function SocialPage() {
           <CardContent>
             {following.length === 0 ? (
               <p className="text-muted-foreground">
-                You're not following anyone yet.
+                You&apos;re not following anyone yet.
               </p>
             ) : (
               <div className="space-y-4">
@@ -181,7 +181,7 @@ export default function SocialPage() {
         {/* Feed */}
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Today's Feed</CardTitle>
+            <CardTitle>Today&apos;s Feed</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
