@@ -14,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { MealPhotoUpload } from '@/components/meal-photo-upload';
 
 interface FoodEntry {
   _id: string;
@@ -44,6 +45,19 @@ interface DailyMacros {
   snack: MealSummary;
 }
 
+interface MealData {
+  _id: string;
+  photo?: {
+    url: string;
+    publicId: string;
+  };
+  foods: FoodEntry[];
+}
+
+interface MealMap {
+  [key: string]: MealData | null;
+}
+
 const emptyMealSummary: MealSummary = {
   calories: 0,
   protein: 0,
@@ -65,11 +79,37 @@ export default function FoodLogPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [macros, setMacros] = useState<DailyMacros>(emptyDailyMacros);
+  const [meals, setMeals] = useState<MealMap>({});
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const token = Cookies.get('jwtToken');
   const decodedToken = token ? decodeJWT(token) : null;
   const userId = decodedToken?.userId;
+
+  // Add fetchMealData function
+  const fetchMealData = async () => {
+    if (!userId) return;
+
+    try {
+      const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+      const newMeals: MealMap = {};
+
+      await Promise.all(
+        mealTypes.map(async (type) => {
+          const response = await fetch(
+            `${getApiUrl()}/api/meal/${userId}/${formattedDate}/${type}`
+          );
+          const data = await response.json();
+          newMeals[type] = data.success ? data.meal : null;
+        })
+      );
+
+      setMeals(newMeals);
+    } catch (error) {
+      console.error('Error fetching meal data:', error);
+      toast.error('Failed to fetch meal data');
+    }
+  };
 
   useEffect(() => {
     if (!userId) {
@@ -77,6 +117,7 @@ export default function FoodLogPage() {
       return;
     }
     fetchFoodEntries();
+    fetchMealData();
   }, [userId, selectedDate]);
 
   const fetchFoodEntries = async () => {
@@ -189,10 +230,15 @@ export default function FoodLogPage() {
     }
   };
 
+  const handlePhotoUpdate = () => {
+    fetchMealData();
+  };
+
   const renderMealSection = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
     const entries = foodEntries.filter(entry => entry.mealType === mealType);
     const mealMacros = macros[mealType];
     const capitalizedMealType = mealType.charAt(0).toUpperCase() + mealType.slice(1);
+    const meal = meals[mealType];
 
     return (
       <div className="border rounded-lg p-4">
@@ -202,34 +248,51 @@ export default function FoodLogPage() {
             {mealMacros.calories.toFixed(0)} kcal
           </div>
         </div>
-        {entries.length > 0 ? (
-          <div className="space-y-3">
-            {entries.map((entry) => (
-              <div
-                key={entry._id}
-                className="flex items-center justify-between p-3 bg-accent/50 rounded-lg"
-              >
-                <div>
-                  <div className="font-medium">{entry.foodName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {entry.servingSize}g • {entry.nutrients.calories} kcal
+
+        <div className="flex gap-6">
+          {/* Photo Upload Section */}
+          {userId && (
+            <MealPhotoUpload
+              userId={userId}
+              date={formattedDate}
+              mealType={mealType}
+              onPhotoUpdate={handlePhotoUpdate}
+              photoUrl={meal?.photo?.url}
+            />
+          )}
+
+          {/* Food Entries Section */}
+          <div className="flex-1">
+            {entries.length > 0 ? (
+              <div className="space-y-2">
+                {entries.map((entry) => (
+                  <div
+                    key={entry._id}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
+                    <div>
+                      <div className="font-medium">{entry.foodName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {entry.servingSize}g • {entry.nutrients.calories} kcal
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteEntry(entry._id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteEntry(entry._id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No {mealType} entries yet
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center text-muted-foreground py-4">
-            No {mealType} entries yet
-          </div>
-        )}
+        </div>
       </div>
     );
   };

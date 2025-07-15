@@ -27,6 +27,8 @@ interface FoodEntry {
   };
   dateAdded: string;
   user: User;
+  mealPhoto?: { url: string };
+  mealType?: string;
 }
 
 export default function SocialPage() {
@@ -127,110 +129,141 @@ export default function SocialPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto">
+      <div className="flex justify-center mb-8">
         <h1 className="text-3xl font-bold">Social Feed</h1>
-        <FindFriendsDialog />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Following List */}
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Following</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {following.length === 0 ? (
-              <p className="text-muted-foreground">
-                You&apos;re not following anyone yet.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {following.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center gap-3 p-2 rounded-lg border"
-                  >
-                    {user.profilePic ? (
+      <div className="flex justify-center gap-8">
+        {/* Feed Column */}
+        <div className="w-[500px] space-y-6">
+          {/* Feed entries will go here */}
+          {loading ? (
+            <p className="text-center text-muted-foreground">Loading feed...</p>
+          ) : feedEntries.length === 0 ? (
+            <p className="text-center text-muted-foreground">
+              No food entries from people you follow today.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {feedEntries.map((entry) => (
+                <div
+                  key={entry._id}
+                  className="bg-card rounded-lg border overflow-hidden"
+                >
+                  {/* Header with user info */}
+                  <div className="p-4 flex items-center gap-3 border-b">
+                    {entry.user.profilePic ? (
                       <img
-                        src={user.profilePic}
-                        alt={`${user.firstName}'s profile`}
+                        src={entry.user.profilePic}
+                        alt={`${entry.user.firstName}'s profile`}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                        {user.firstName[0]}
-                        {user.lastName[0]}
+                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm">
+                        {entry.user.firstName[0]}
+                        {entry.user.lastName[0]}
                       </div>
                     )}
                     <div>
                       <p className="font-medium">
-                        {user.firstName} {user.lastName}
+                        {entry.user.firstName} {entry.user.lastName}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {user.email}
+                        {new Date(entry.dateAdded).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Feed */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Today&apos;s Feed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-center text-muted-foreground">Loading feed...</p>
-            ) : feedEntries.length === 0 ? (
-              <p className="text-center text-muted-foreground">
-                No food entries from people you follow today.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {feedEntries.map((entry) => (
-                  <div
-                    key={entry._id}
-                    className="p-4 rounded-lg border space-y-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      {entry.user.profilePic ? (
+                  {/* Meal Photo */}
+                  {entry.mealPhoto?.url && (
+                    <div className="aspect-square w-full relative">
+                      <img
+                        src={entry.mealPhoto.url}
+                        alt={`${entry.mealType} meal`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Food name and stats */}
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <p className="text-lg font-semibold">{entry.foodName}</p>
+                    </div>
+
+                    {/* Macro stats */}
+                    <div className="grid grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Calories</p>
+                        <p className="font-medium">{entry.nutrients.calories} kcal</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Protein</p>
+                        <p className="font-medium">{entry.nutrients.protein}g</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Carbs</p>
+                        <p className="font-medium">{entry.nutrients.carbohydrates}g</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Fat</p>
+                        <p className="font-medium">{entry.nutrients.fat}g</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Following List Column */}
+        <div className="w-[300px]">
+          <Card className="sticky top-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Following</CardTitle>
+              <FindFriendsDialog />
+            </CardHeader>
+            <CardContent>
+              {following.length === 0 ? (
+                <p className="text-muted-foreground">
+                  You&apos;re not following anyone yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {following.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center gap-3 p-2 rounded-lg border"
+                    >
+                      {user.profilePic ? (
                         <img
-                          src={entry.user.profilePic}
-                          alt={`${entry.user.firstName}'s profile`}
-                          className="w-8 h-8 rounded-full object-cover"
+                          src={user.profilePic}
+                          alt={`${user.firstName}'s profile`}
+                          className="w-10 h-10 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm">
-                          {entry.user.firstName[0]}
-                          {entry.user.lastName[0]}
+                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                          {user.firstName[0]}
+                          {user.lastName[0]}
                         </div>
                       )}
                       <div>
                         <p className="font-medium">
-                          {entry.user.firstName} {entry.user.lastName}
+                          {user.firstName} {user.lastName}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(entry.dateAdded).toLocaleTimeString()}
+                          {user.email}
                         </p>
                       </div>
                     </div>
-                    <div className="pl-11">
-                      <p className="font-medium">{entry.foodName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {entry.nutrients.calories} kcal • {entry.nutrients.protein}g protein • {entry.nutrients.carbohydrates}g carbs • {entry.nutrients.fat}g fat
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

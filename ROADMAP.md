@@ -5,7 +5,6 @@
 - [back] Remove mcreynolds02@gmail.com user from database
 - [back] Fix email verification and forgot-password
 - [front] Working MVP App
-- [front] Fix linter errors
 - [front] Fix grams (amount) when submitting foods (portion sizes)
 - [front] password complexity verification
 - [front] Accessibility and lighthouse and responsiveness
