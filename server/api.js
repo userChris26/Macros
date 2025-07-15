@@ -75,12 +75,14 @@ async function searchUSDAFood(query) {
 
 exports.setApp = function( app, client )
 {
+
 	// ─── Account Endpoints
 	app.post('/api/register', async (req, res) =>
 	{
 		// incoming: email, password, firstName, lastName
 		// outgoing: error
 
+    var blake2 = require('blake2');
 		const { userEmail, userPassword, userFirstName, userLastName } = req.body;
 		var ret;
 		
@@ -93,13 +95,17 @@ exports.setApp = function( app, client )
 			}
 			else
 			{
+        // Hash the password
+        var hash = blake2.createHash('blake2b');
+        hash.update(Buffer.from(userPassword));
+
 				const newUser = new User(
 				{ 
-				email: userEmail,
-				password: userPassword,
-				firstName: userFirstName,
-				lastName: userLastName,
-				isVerified: false
+          email: userEmail,
+          password: hash.digest('hex'),
+          firstName: userFirstName,
+          lastName: userLastName,
+          isVerified: false
 				});
 				await newUser.save();
 
@@ -132,11 +138,17 @@ exports.setApp = function( app, client )
 	app.post('/api/login', async (req, res) => {
 		// incoming: email, password
 		// outgoing: accessToken, error
+    
+    var blake2 = require('blake2');
 
 		const { userEmail, userPassword } = req.body;
 		var ret;
-				
-		const result = await User.findOne({ email:userEmail, password:userPassword });
+
+		// Hash the password
+    var hash = blake2.createHash('blake2b');
+    hash.update(Buffer.from(userPassword));
+		
+    const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
 		try {
 			if (!result) {
 				ret = { error: "Login/Password incorrect" };
@@ -516,31 +528,35 @@ exports.setApp = function( app, client )
 		}
 	});
 
-	app.put('/api/update-password/:userId', async (req, res) => {
+	// app.put('/api/update-password/:userId', async (req, res) => {
+  //   var blake2 = require('blake2');
+		
+  //   try {
+	// 		const { userId } = req.params;
+	// 		const { password } = req.body;
 
-		try {
-			const { userId } = req.params;
-			const { password } = req.body;
+  //     var hash = blake2.createHash('blake2b');
+  //     hash.update(Buffer.from(password));
 
-			const updatedUser = await User.findByIdAndUpdate(
-				userId,
-				{ password },
-				{ new: true }
-			);//.select('-password');
+	// 		const updatedUser = await User.findByIdAndUpdate(
+	// 			userId,
+	// 			{ password:hash.digest('hex') },
+	// 			{ new: true }
+	// 		);//.select('-password');
 
-			if (!updatedUser) {
-				return res.status(404).json({ error: 'User not found' });
-			}
+	// 		if (!updatedUser) {
+	// 			return res.status(404).json({ error: 'User not found' });
+	// 		}
 
-			res.json({
-				message: 'Password updated successfully',
-				error: ''
-			});
-		} catch (err) {
-			console.error(err);
-			res.status(500).json({ error: 'Could not update password' });
-		}
-	});
+	// 		res.json({
+	// 			message: 'Password updated successfully',
+	// 			error: ''
+	// 		});
+	// 	} catch (err) {
+	// 		console.error(err);
+	// 		res.status(500).json({ error: 'Could not update password' });
+	// 	}
+	// });
 
 
 
@@ -874,8 +890,15 @@ exports.setApp = function( app, client )
 
     // Reset Password with Token
     app.post('/api/reset-password', async (req, res) => {
+      var blake2 = require('blake2');
+
       try {
+        
         const { token, newPassword } = req.body;
+        
+        // Hash the password
+        var hash = blake2.createHash('blake2b');
+        hash.update(Buffer.from(newPassword));
         
         console.log('Reset password attempt with token:', token);
         
@@ -900,7 +923,7 @@ exports.setApp = function( app, client )
 
         // Update password and clear reset token
         await User.findByIdAndUpdate(user._id, {
-          password: newPassword,
+          password: hash.digest('hex'),
           resetToken: null,
           resetTokenExpiry: null
         });
