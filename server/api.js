@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const sgMail = require('@sendgrid/mail');
 const { cloudinary } = require('./config/cloudinary');
 const FoodEntry = require('./models/FoodEntry');
-const User = require('./models/user');
+const User = require('./models/user.js');
 const Meal = require('./models/Meal');
 
 // Initialize SendGrid
@@ -72,7 +72,7 @@ async function searchUSDAFood(query) {
 		console.error('Error searching USDA API:', error);
 		throw error;
 	}
-	}
+}
 
 
 exports.setApp = function( app, client )
