@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../utils/validation.dart';
+import '../widgets/loading_widget.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -11,24 +13,34 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _email = '';
-  String _password = '';
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void _login(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
+    
     final authService = Provider.of<AuthService>(context, listen: false);
-    final result = await authService.login(_email, _password);
+    final result = await authService.login(_emailController.text, _passwordController.text);
+    
     setState(() {
       _isLoading = false;
       _errorMessage = result;
     });
+    
     if (result == null) {
       // Navigate to home or main screen
       Navigator.pushReplacementNamed(context, '/home');
@@ -47,30 +59,57 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Email'),
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email),
+                ),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) => value == null || value.isEmpty ? 'Enter your email' : null,
-                onSaved: (value) => _email = value ?? '',
+                validator: ValidationUtils.validateEmail,
+                enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Password'),
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: Icon(Icons.lock),
+                ),
                 obscureText: true,
-                validator: (value) => value == null || value.isEmpty ? 'Enter your password' : null,
-                onSaved: (value) => _password = value ?? '',
+                validator: ValidationUtils.validatePassword,
+                enabled: !_isLoading,
+                onFieldSubmitted: (_) => _login(context),
               ),
               const SizedBox(height: 24),
               if (_errorMessage != null)
-                Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: Colors.red[700]),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : () => _login(context),
-                  child: _isLoading ? const CircularProgressIndicator() : const Text('Login'),
+                  child: _isLoading 
+                    ? const AppLoadingWidget(size: 20)
+                    : const Text('Login'),
                 ),
               ),
+              const SizedBox(height: 16),
               TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/register'),
+                onPressed: _isLoading ? null : () => Navigator.pushNamed(context, '/register'),
                 child: const Text('Don\'t have an account? Register'),
               ),
             ],
