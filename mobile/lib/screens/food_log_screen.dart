@@ -348,13 +348,6 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Food Log'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addFoodEntry,
-            tooltip: 'Add Food Entry',
-          ),
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -363,26 +356,16 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
           children: [
             // Header with date picker
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Food Log',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 16),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.calendar_today, size: 18),
-                      label: Text(DateFormat('MMMM d, yyyy').format(selectedDate)),
-                      onPressed: _pickDate,
-                    ),
-                  ],
+                Text(
+                  'Food Log',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('Add Food Entry'),
-                  onPressed: _addFoodEntry,
+                const SizedBox(width: 16),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.calendar_today, size: 18),
+                  label: Text(DateFormat('MMMM d, yyyy').format(selectedDate)),
+                  onPressed: _pickDate,
                 ),
               ],
             ),
@@ -431,7 +414,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                               ? Center(
                                   child: Text(
                                     'No food entries for ${DateFormat('MMMM d, yyyy').format(selectedDate)}.' +
-                                        (isToday ? ' Click "Add Food Entry" to get started!' : ''),
+                                        (isToday ? ' Click the + button to get started!' : ''),
                                     style: TextStyle(color: Colors.grey[600]),
                                     textAlign: TextAlign.center,
                                   ),
@@ -460,9 +443,10 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _addFoodEntry,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Food Entry'),
         tooltip: 'Add Food Entry',
       ),
     );
