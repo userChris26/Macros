@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sgMail = require('@sendgrid/mail');
 const { cloudinary } = require('./config/cloudinary');
+const emailConfig = require('./config/email');
 const FoodEntry = require('./models/FoodEntry');
 const User = require('./models/user.js');
 const Meal = require('./models/Meal');
@@ -84,7 +85,7 @@ exports.setApp = function( app, client )
 		// incoming: email, password, firstName, lastName
 		// outgoing: error
 
-    	var blake2 = require('blake2');
+    var blake2 = require('blake2');
 
 		const { userEmail, userPassword, userFirstName, userLastName } = req.body;
 		var ret;
@@ -112,7 +113,36 @@ exports.setApp = function( app, client )
 				});
 				await newUser.save();
 
-				ret = { error: '' };
+				// Generate verification token and send email
+				const verifyToken = require('crypto').randomBytes(32).toString('hex');
+				const verifyTokenExpiry = new Date(Date.now() + 3600000); // 1 hour expiry
+
+				// Save verification token to user
+				await User.findByIdAndUpdate(
+					newUser._id,
+					{
+						verifyToken,
+						verifyTokenExpiry
+					}
+				);
+
+				// Send verification email
+				const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
+				const msg = {
+					to: userEmail,
+					from: emailConfig.senderEmail,
+					subject: emailConfig.templates.emailVerify.subject,
+					text: emailConfig.templates.emailVerify.generateText(verifyUrl),
+					html: emailConfig.templates.emailVerify.generateHtml(verifyUrl)
+				};
+
+				try {
+					await sgMail.send(msg);
+					ret = { error: '', verificationEmailSent: true };
+				} catch (emailError) {
+					console.error('Failed to send verification email:', emailError);
+					ret = { error: 'Account created but failed to send verification email. Please contact support.' };
+				}
 			}
 		}
 		catch(e)
@@ -142,16 +172,20 @@ exports.setApp = function( app, client )
 			if (!result) {
 				ret = { error: "Login/Password incorrect" };
 			} else {
-				const token = require("./createJWT.js");
-				const tokenData = result.isVerified ? token.createToken(result) : null;
-
-				if (tokenData.error) {
-					ret = { error: tokenData.error };
+				if (!result.isVerified) {
+					ret = { error: "Please verify your email before logging in", needsVerification: true };
 				} else {
-					ret = {
-						accessToken: tokenData.accessToken,
-						error: ''
-					};
+					const token = require("./createJWT.js");
+					const tokenData = token.createToken(result);
+
+					if (tokenData.error) {
+						ret = { error: tokenData.error };
+					} else {
+						ret = {
+							accessToken: tokenData.accessToken,
+							error: ''
+						};
+					}
 				}
 			}
 		} catch(e) {
@@ -1546,6 +1580,38 @@ app.get('/api/meal/:mealId', async (req, res) => {
     } catch (error) {
         console.error('Get meal details error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Delete user and all associated data
+app.delete('/api/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Find user first to check if exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Delete all associated data
+        await Promise.all([
+            // Delete user's food entries
+            FoodEntry.deleteMany({ user: userId }),
+            // Delete user's meals
+            Meal.deleteMany({ user: userId }),
+            // Delete network connections (both following and followers)
+            Network.deleteMany({ $or: [{ followerId: userId }, { followingId: userId }] }),
+            // Delete the user's profile picture from Cloudinary if it exists
+            user.profilePic ? cloudinary.uploader.destroy(`profile_pictures/${user.profilePic.split('/').pop().split('.')[0]}`) : Promise.resolve(),
+            // Finally delete the user
+            User.findByIdAndDelete(userId)
+        ]);
+
+        res.json({ error: '', message: 'User and associated data deleted successfully' });
+    } catch (err) {
+        console.error('Delete user error:', err);
+        res.status(500).json({ error: 'Failed to delete user' });
     }
 });
 }
