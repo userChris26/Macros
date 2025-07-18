@@ -2,7 +2,7 @@
 // Frontend API utility functions for Cloudinary integration
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'http://64.225.3.4:5000' 
+  ? 'https://cop4331iscool.xyz' 
   : 'http://localhost:5000';
 
 // Upload profile picture

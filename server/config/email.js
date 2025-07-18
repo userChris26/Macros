@@ -7,7 +7,7 @@ const getFrontendUrl = () => {
     return process.env.FRONTEND_URL;
   }
   return process.env.NODE_ENV === 'production' 
-    ? 'https://64.225.3.4:3000'  // Frontend runs on port 3000
+    ? 'https://cop4331iscool.xyz'  // Production domain
     : 'http://localhost:3000';
 };
 

@@ -1,5 +1,5 @@
 const defaultUrl = process.env.NODE_ENV === 'production'
-  ? 'http://64.225.3.4:3000'
+  ? 'https://cop4331iscool.xyz'
   : 'http://localhost:3000';
 
 export const metadata = {
