@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getApiUrl() {
   return process.env.NODE_ENV === 'production'
-    ? 'https://cop4331iscool.xyz'
+    ? 'http://cop4331iscool.xyz'
     : 'http://localhost:5000';
 }
 

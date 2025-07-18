@@ -1,61 +1,41 @@
-require('dotenv').config();
 const express = require('express');
-const https = require('https');
-const fs = require('fs');
-const cors = require('cors');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-const api = require('./api.js');
+const cors = require('cors');
+
+require('dotenv').config();
+
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+// Connect to MongoDB
+const uri = process.env.MONGODB_URI;
+const mongoose = require("mongoose");
+mongoose.connect(uri)
+  .then(() => console.log("Mongo DB connected"))
+  .catch(err => console.log(err));
 
 const app = express();
 
-// Middleware
+// Increase payload size limit for JSON and URL-encoded bodies
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cors());
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-// Connect to MongoDB
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.error('❌ Missing MONGODB_URI in .env');
-  process.exit(1);
-} else {
-  console.log('✅ Found MONGODB_URI');
-}
-
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
-
-// Set up API routes
-api.setApp(app);
-
-// HTTP Server (redirect to HTTPS)
-const httpApp = express();
-httpApp.use((req, res) => {
-  res.redirect(`https://${req.headers.host}${req.url}`);
+app.use((req, res, next) =>
+{
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
+    res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, PATCH, DELETE, OPTIONS'
+    );
+    next();
 });
 
-// SSL certificate paths
-const sslOptions = {
-  key: fs.readFileSync('/path/to/privkey.pem'),
-  cert: fs.readFileSync('/path/to/fullchain.pem')
-};
+var api = require('./api.js');
+api.setApp( app, mongoose );
 
-// Create HTTPS server
-const httpsServer = https.createServer(sslOptions, app);
-
-// Start servers
-const HTTP_PORT = 5000;
-const HTTPS_PORT = 5443;
-
-httpApp.listen(HTTP_PORT, () => {
-  console.log(`HTTP server running on port ${HTTP_PORT} (redirecting to HTTPS)`);
-});
-
-httpsServer.listen(HTTPS_PORT, () => {
-  console.log(`HTTPS server running on port ${HTTPS_PORT}`);
-});
+app.listen(5000); // start Node + Express server on port 5000
