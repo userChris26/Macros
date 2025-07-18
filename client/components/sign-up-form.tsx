@@ -14,7 +14,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Check, X } from "lucide-react";
+
+interface PasswordRequirement {
+  text: string;
+  validator: (password: string) => boolean;
+}
+
+const passwordRequirements: PasswordRequirement[] = [
+  {
+    text: "At least 8 characters long",
+    validator: (password: string) => password.length >= 8,
+  },
+  {
+    text: "Contains at least one uppercase letter",
+    validator: (password: string) => /[A-Z]/.test(password),
+  },
+  {
+    text: "Contains at least one lowercase letter",
+    validator: (password: string) => /[a-z]/.test(password),
+  },
+  {
+    text: "Contains at least one number",
+    validator: (password: string) => /[0-9]/.test(password),
+  },
+  {
+    text: "Contains at least one special character",
+    validator: (password: string) => /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  },
+];
 
 export function SignUpForm({
   className,
@@ -27,12 +56,32 @@ export function SignUpForm({
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [requirements, setRequirements] = useState<boolean[]>(
+    new Array(passwordRequirements.length).fill(false)
+  );
   const router = useRouter();
+
+  // Check password requirements on every keystroke
+  useEffect(() => {
+    const newRequirements = passwordRequirements.map((req) =>
+      req.validator(password)
+    );
+    setRequirements(newRequirements);
+  }, [password]);
+
+  // Check if all password requirements are met
+  const isPasswordValid = requirements.every((req) => req);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    if (!isPasswordValid) {
+      setError("Please meet all password requirements");
+      setIsLoading(false);
+      return;
+    }
 
     if (password !== repeatPassword) {
       setError("Passwords do not match");
@@ -109,6 +158,29 @@ export function SignUpForm({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <div className="mt-2 space-y-2">
+                  {passwordRequirements.map((req, index) => (
+                    <div
+                      key={req.text}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      {requirements[index] ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <X className="h-4 w-4 text-red-500" />
+                      )}
+                      <span
+                        className={cn(
+                          requirements[index]
+                            ? "text-green-500"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {req.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="repeat-password">Repeat Password</Label>
@@ -119,9 +191,30 @@ export function SignUpForm({
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
+                {repeatPassword && (
+                  <div className="flex items-center gap-2 text-sm mt-2">
+                    {password === repeatPassword ? (
+                      <>
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span className="text-green-500">Passwords match</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-4 w-4 text-red-500" />
+                        <span className="text-muted-foreground">
+                          Passwords do not match
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !isPasswordValid || password !== repeatPassword}
+              >
                 {isLoading ? "Creating account..." : "Sign up"}
               </Button>
             </div>

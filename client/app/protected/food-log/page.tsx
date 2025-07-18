@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { FoodSearchDialog } from "@/components/food-search-dialog";
@@ -18,16 +18,21 @@ import { MealPhotoUpload } from '@/components/meal-photo-upload';
 
 interface FoodEntry {
   _id: string;
-  foodName: string;
-  servingSize: number;
+  description: string;
+  dataType: string;
+  brandOwner?: string;
+  brandName?: string;
+  servingAmount: number;
+  servingUnit: string;
+  gramWeight: number;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   nutrients: {
-    calories: string;
-    protein: string;
-    carbohydrates: string;
-    fat: string;
+    calories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
   };
-  dateAdded: string;
+  date: string;
 }
 
 interface MealSummary {
@@ -36,6 +41,8 @@ interface MealSummary {
   carbs: number;
   fat: number;
 }
+
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 interface DailyMacros {
   total: MealSummary;
@@ -52,6 +59,7 @@ interface MealData {
     publicId: string;
   };
   foods: FoodEntry[];
+  mealTime: MealType;
 }
 
 interface MealMap {
@@ -75,7 +83,6 @@ const emptyDailyMacros: DailyMacros = {
 
 export default function FoodLogPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [macros, setMacros] = useState<DailyMacros>(emptyDailyMacros);
@@ -86,13 +93,14 @@ export default function FoodLogPage() {
   const decodedToken = token ? decodeJWT(token) : null;
   const userId = decodedToken?.userId;
 
-  // Add fetchMealData function
-  const fetchMealData = async () => {
+  // Memoize fetchMealData to prevent recreation on every render
+  const fetchMealData = useCallback(async () => {
     if (!userId) return;
 
     try {
-      const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+      const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
       const newMeals: MealMap = {};
+      const newMacros: DailyMacros = { ...emptyDailyMacros };
 
       await Promise.all(
         mealTypes.map(async (type) => {
@@ -100,114 +108,54 @@ export default function FoodLogPage() {
             `${getApiUrl()}/api/meal/${userId}/${formattedDate}/${type}`
           );
           const data = await response.json();
-          newMeals[type] = data.success ? data.meal : null;
+          
+          if (data.success && data.meal) {
+            newMeals[type] = data.meal;
+            
+            // Calculate macros for this meal
+            data.meal.foods.forEach((food: FoodEntry) => {
+              const calories = food.nutrients.calories;
+              const protein = food.nutrients.protein;
+              const carbs = food.nutrients.carbohydrates;
+              const fat = food.nutrients.fat;
+
+              // Add to meal-specific totals
+              newMacros[type].calories += calories;
+              newMacros[type].protein += protein;
+              newMacros[type].carbs += carbs;
+              newMacros[type].fat += fat;
+
+              // Add to daily totals
+              newMacros.total.calories += calories;
+              newMacros.total.protein += protein;
+              newMacros.total.carbs += carbs;
+              newMacros.total.fat += fat;
+            });
+          } else {
+            newMeals[type] = null;
+          }
         })
       );
 
       setMeals(newMeals);
+      setMacros(newMacros);
     } catch (error) {
       console.error('Error fetching meal data:', error);
       toast.error('Failed to fetch meal data');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [userId, formattedDate]); // Include dependencies that fetchMealData uses
 
   useEffect(() => {
     if (!userId) {
       toast.error("Please log in to view your food log");
       return;
     }
-    fetchFoodEntries();
     fetchMealData();
-  }, [userId, selectedDate]);
+  }, [userId, selectedDate, fetchMealData]); // Now we can safely include fetchMealData
 
-  const fetchFoodEntries = async () => {
-    if (!userId) return;
-
-    try {
-      const response = await fetch(`${getApiUrl()}/api/getfoodentries`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, date: formattedDate }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setFoodEntries(data.foodEntries);
-        calculateMacros(data.foodEntries);
-      } else {
-        toast.error(data.error || "Failed to fetch food entries");
-      }
-    } catch (error) {
-      console.error('Error fetching food entries:', error);
-      toast.error("Failed to fetch food entries");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateMacros = (entries: FoodEntry[]) => {
-    const newMacros: DailyMacros = { ...emptyDailyMacros };
-
-    entries.forEach(entry => {
-      const mealType = entry.mealType || 'snack';
-      const calories = parseFloat(entry.nutrients.calories || '0');
-      const protein = parseFloat(entry.nutrients.protein || '0');
-      const carbs = parseFloat(entry.nutrients.carbohydrates || '0');
-      const fat = parseFloat(entry.nutrients.fat || '0');
-
-      // Add to meal-specific totals
-      newMacros[mealType].calories += calories;
-      newMacros[mealType].protein += protein;
-      newMacros[mealType].carbs += carbs;
-      newMacros[mealType].fat += fat;
-
-      // Add to daily totals
-      newMacros.total.calories += calories;
-      newMacros.total.protein += protein;
-      newMacros.total.carbs += carbs;
-      newMacros.total.fat += fat;
-    });
-
-    setMacros(newMacros);
-  };
-
-  const handleFoodSelect = async (food: any, servingSize: number, mealType: string) => {
-    if (!userId) {
-      toast.error("User ID not found. Please try logging in again.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`${getApiUrl()}/api/addfood`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          fdcId: food.fdcId,
-          servingSize,
-          mealType,
-          date: formattedDate
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        await fetchFoodEntries();
-        toast.success("Food entry added successfully");
-      } else {
-        toast.error(data.error || "Failed to add food entry");
-      }
-    } catch (error) {
-      console.error('Error adding food:', error);
-      toast.error("Failed to add food entry");
-    }
-  };
-
-  const handleDeleteEntry = async (entryId: string) => {
+  const handleDeleteEntry = async (entryId: string, mealType: string) => {
     try {
       const response = await fetch(`${getApiUrl()}/api/deletefoodentry`, {
         method: 'POST',
@@ -219,7 +167,7 @@ export default function FoodLogPage() {
 
       const data = await response.json();
       if (data.success) {
-        await fetchFoodEntries();
+        await fetchMealData(); // Refresh all meal data
         toast.success("Food entry deleted successfully");
       } else {
         toast.error(data.error || "Failed to delete food entry");
@@ -234,11 +182,15 @@ export default function FoodLogPage() {
     fetchMealData();
   };
 
-  const renderMealSection = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
-    const entries = foodEntries.filter(entry => entry.mealType === mealType);
+  const handleFoodAdded = () => {
+    fetchMealData(); // Refresh data when food is added
+    setIsDialogOpen(false); // Close the dialog
+  };
+
+  const renderMealSection = (mealType: MealType) => {
+    const meal = meals[mealType];
     const mealMacros = macros[mealType];
     const capitalizedMealType = mealType.charAt(0).toUpperCase() + mealType.slice(1);
-    const meal = meals[mealType];
 
     return (
       <div className="border rounded-lg p-4">
@@ -263,23 +215,28 @@ export default function FoodLogPage() {
 
           {/* Food Entries Section */}
           <div className="flex-1">
-            {entries.length > 0 ? (
+            {meal && meal.foods.length > 0 ? (
               <div className="space-y-2">
-                {entries.map((entry) => (
+                {meal.foods.map((entry) => (
                   <div
                     key={entry._id}
                     className="flex items-center justify-between py-2 border-b last:border-0"
                   >
                     <div>
-                      <div className="font-medium">{entry.foodName}</div>
+                      <div className="font-medium">{entry.description}</div>
+                      {entry.dataType === 'Branded' && (
+                        <div className="text-sm text-muted-foreground">
+                          {entry.brandName} • {entry.brandOwner}
+                        </div>
+                      )}
                       <div className="text-sm text-muted-foreground">
-                        {entry.servingSize}g • {entry.nutrients.calories} kcal
+                        {entry.servingAmount} {entry.servingUnit} • {entry.nutrients.calories.toFixed(0)} kcal
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteEntry(entry._id)}
+                      onClick={() => handleDeleteEntry(entry._id, mealType)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -287,93 +244,82 @@ export default function FoodLogPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center text-muted-foreground py-4">
-                No {mealType} entries yet
+              <div className="text-center py-8 text-muted-foreground">
+                No food entries yet
               </div>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-4"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Food
+            </Button>
           </div>
         </div>
       </div>
     );
   };
 
-  if (!userId) {
-    return (
-      <div className="flex flex-col gap-6">
-        <div className="text-center text-muted-foreground py-8">
-          Please log in to view your food log.
-        </div>
-      </div>
-    );
-  }
-
-  const isToday = formattedDate === format(new Date(), 'yyyy-MM-dd');
-
   return (
-    <div className="flex flex-col gap-6">
+    <div className="container py-6 space-y-8">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold">Food Log</h1>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                {format(selectedDate, 'MMMM d, yyyy')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Food Entry
-        </Button>
+        <h2 className="text-3xl font-bold tracking-tight">Food Log</h2>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(selectedDate, "PPP")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
-      
-      {/* Macros Summary Card */}
-      <div className="border rounded-lg p-4">
-        <h2 className="font-semibold mb-2">
-          {isToday ? "Today's" : format(selectedDate, "MMMM d's")} Macros
-        </h2>
-        <div className="grid grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Calories</p>
-            <p className="text-2xl font-bold">{macros.total.calories.toFixed(0)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Protein</p>
-            <p className="text-2xl font-bold">{macros.total.protein.toFixed(1)}g</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Carbs</p>
-            <p className="text-2xl font-bold">{macros.total.carbs.toFixed(1)}g</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Fat</p>
-            <p className="text-2xl font-bold">{macros.total.fat.toFixed(1)}g</p>
-          </div>
+
+      {/* Daily Totals */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="border rounded-lg p-4">
+          <div className="text-sm font-medium">Calories</div>
+          <div className="text-2xl font-bold">{macros.total.calories.toFixed(0)}</div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="text-sm font-medium">Protein</div>
+          <div className="text-2xl font-bold">{macros.total.protein.toFixed(0)}g</div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="text-sm font-medium">Carbs</div>
+          <div className="text-2xl font-bold">{macros.total.carbs.toFixed(0)}g</div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="text-sm font-medium">Fat</div>
+          <div className="text-2xl font-bold">{macros.total.fat.toFixed(0)}g</div>
         </div>
       </div>
 
       {/* Meal Sections */}
-      <div className="grid gap-6">
+      <div className="space-y-6">
         {renderMealSection('breakfast')}
         {renderMealSection('lunch')}
         {renderMealSection('dinner')}
         {renderMealSection('snack')}
       </div>
 
+      {/* Food Search Dialog */}
       <FoodSearchDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onFoodSelect={handleFoodSelect}
+        userId={userId || ''}
+        date={formattedDate}
+        onFoodAdded={handleFoodAdded} // Add callback for when food is added
       />
     </div>
   );

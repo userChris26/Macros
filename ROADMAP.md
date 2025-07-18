@@ -1,35 +1,64 @@
 # ROADMAP
 
-## ESSENTIAL
-- [back] Allow meals in database: each food needs a meal attached as well (breakfast, lunch, dinner, snack)
-- [back] Remove mcreynolds02@gmail.com user from database
-- [back] Fix email verification and forgot-password
-- [front] Working MVP App
-- [front] Fix grams (amount) when submitting foods (portion sizes)
-- [front] password complexity verification
-- [front] Accessibility and lighthouse and responsiveness
+- Finish Mobile Version
 
 ## TESTING
-- [front/back] Create unit tests and show in powerpoint (routes, userflow...)
-- [front/back] Perform full end to end tests with new users
-- [everyone] Create accounts on the app and track your foods for 2 days, try to break stuff
+- Create unit tests and show in powerpoint (routes, userflow...)
+- Perform full end to end tests with new users
+- Create accounts on the app and track your foods for 2 days, try to break stuff
+- Test all endpoints, delete user, delete meal, delete pic / replace...
 
 ## PRESENTATION
 - Create Powerpoint, ERD, UseCase, rehearse
 - Gantt Chart
 - Swagger and API documentation with one working endpoint
 
----
-
-## IF POSSIBLE IMPORTANT
-- [back] User may upload one photo per meal
-- [front] Fix follower / network features (do not display current user)(layout social feature nice)
-- [front] Stats by user profile
-
 ## DETAILS
-- [front] Banner ensure works in light mode (improve hero)
-- [front] Sort foods by genericness
-- [front] Don't say can't find anything before they search
-- [front] About / help page for users
-- [front] "Social calorie tracker" everywhere
-- [front] keyboard navigation
+- Stats by user profile, ensure they change their settings in db
+- Accessibility and lighthouse and responsiveness
+- Banner ensure works in light mode (improve hero)(iphone screenshots)
+- Sort foods by genericness
+- Don't say can't find anything before they search
+- Don't shown own user in search users
+- About / help page for users
+- "Social calorie tracker" everywhere
+- keyboard navigation
+
+## TECHNICAL REFERENCE
+
+### Meal System Architecture
+The app uses a hierarchical meal-based system where:
+- Each user has multiple meals per day (breakfast, lunch, dinner, snack)
+- Each meal can have:
+  - Multiple food entries
+  - One photo
+  - Metadata (date, type, etc.)
+
+### Data Flow
+1. User adds food:
+   - Food details fetched from USDA API
+   - FoodEntry created and stored
+   - Meal created/updated to include the food entry
+   - Nutrients calculated per serving
+
+### Key API Endpoints
+- `/api/meal/:userId/:date/:mealType` - Get meal with foods and photo
+- `/api/addfood` - Add food entry and associate with meal
+- `/api/meal/photo` - Upload/update meal photo
+
+### Database Relations
+- User -> Meals (one-to-many)
+- Meal -> FoodEntries (one-to-many)
+- Meal -> Photo (one-to-one)
+
+### Social Feed
+- Fetches meals (not individual foods) from followed users
+- Displays in reverse chronological order
+- Shows meal photos and aggregated nutrients
+- Groups foods by meal time
+
+### Nutrient Calculations
+- USDA API returns nutrients per 100g
+- Backend converts to per-serving values
+- Frontend displays total nutrients per meal
+- Accounts for serving size in calculations

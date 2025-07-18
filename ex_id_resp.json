@@ -1,0 +1,213 @@
+{
+    "fdcId": 748967,
+    "description": "Eggs, Grade A, Large, egg whole",
+    "publicationDate": "12/16/2019",
+    "foodNutrients": [
+      {
+        "type": "FoodNutrient",
+        "nutrient": {
+          "id": 1008,
+          "number": "208",
+          "name": "Energy",
+          "rank": 300,
+          "unitName": "kcal"
+        },
+        "foodNutrientDerivation": {
+          "id": 49,
+          "code": "NC",
+          "description": "Calculated",
+          "foodNutrientSource": {
+            "id": 2,
+            "code": "4",
+            "description": "Calculated or imputed"
+          }
+        },
+        "id": 8530276,
+        "amount": 148,
+        "nutrientAnalysisDetails": []
+      },
+      {
+        "type": "FoodNutrient",
+        "nutrient": {
+          "id": 1003,
+          "number": "203",
+          "name": "Protein",
+          "rank": 600,
+          "unitName": "g"
+        },
+        "foodNutrientDerivation": {
+          "id": 49,
+          "code": "NC",
+          "description": "Calculated",
+          "foodNutrientSource": {
+            "id": 2,
+            "code": "4",
+            "description": "Calculated or imputed"
+          }
+        },
+        "id": 8530288,
+        "amount": 12.4,
+        "max": 13.2,
+        "min": 11.6,
+        "median": 12.4,
+        "nutrientAnalysisDetails": []
+      },
+      {
+        "type": "FoodNutrient",
+        "nutrient": {
+          "id": 1004,
+          "number": "204",
+          "name": "Total lipid (fat)",
+          "rank": 800,
+          "unitName": "g"
+        },
+        "foodNutrientDerivation": {
+          "id": 1,
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "id": 1,
+            "code": "1",
+            "description": "Analytical or derived from analytical"
+          }
+        },
+        "id": 8530310,
+        "amount": 9.96,
+        "dataPoints": 24,
+        "max": 11.7,
+        "min": 8.31,
+        "median": 9.87,
+        "minYearAcquired": 2019,
+        "nutrientAnalysisDetails": [
+          {
+            "subSampleId": 747725,
+            "nutrientId": 1004,
+            "nutrientAcquisitionDetails": [
+              {
+                "sampleUnitId": 747724,
+                "purchaseDate": "6/19/2019",
+                "storeCity": "4701 SUNRAY DR HOLIDAY 34690",
+                "storeState": "FL"
+              },
+              {
+                "sampleUnitId": 747710,
+                "purchaseDate": "6/19/2019",
+                "storeCity": "4701 SUNRAY DR HOLIDAY 34690",
+                "storeState": "FL"
+              }
+            ],
+            "amount": 9.82,
+            "labMethodTechnique": "Acid hydrolysis",
+            "labMethodDescription": "AOAC 954.02",
+            "labMethodOriginalDescription": "954.02 (4.5.02 or 7.063) Fat (Crude) or Ether Extract in Pet Food",
+            "labMethodLink": "https://doi.org/10.1093/9780197610145.001.0001"
+          }
+        ]
+      },
+      {
+        "type": "FoodNutrient",
+        "nutrient": {
+          "id": 1005,
+          "number": "205",
+          "name": "Carbohydrate, by difference",
+          "rank": 1110,
+          "unitName": "g"
+        },
+        "foodNutrientDerivation": {
+          "id": 49,
+          "code": "NC",
+          "description": "Calculated",
+          "foodNutrientSource": {
+            "id": 2,
+            "code": "4",
+            "description": "Calculated or imputed"
+          }
+        },
+        "id": 8530321,
+        "amount": 0.96,
+        "nutrientAnalysisDetails": []
+      }
+    ],
+    "foodPortions": [
+      {
+        "id": 193781,
+        "dataPoints": 526,
+        "gramWeight": 50.3,
+        "sequenceNumber": 1,
+        "amount": 1,
+        "modifier": "whole without shell",
+        "minDateAcquired": "5/14/2019",
+        "measureUnit": {
+          "id": 1099,
+          "name": "egg",
+          "abbreviation": "egg"
+        },
+        "minYearAcquired": 2019
+      }
+    ],
+    "dataType": "Foundation",
+    "foodClass": "FinalFood",
+    "inputFoods": [
+      {
+        "id": 46703,
+        "foodDescription": "EGG, GRADE A, LARGE, WHOLE, RAW, FRESH",
+        "inputFood": {
+          "fdcId": 748933,
+          "description": "EGG, GRADE A, LARGE, WHOLE, RAW, FRESH",
+          "publicationDate": "12/16/2019",
+          "foodAttributeTypes": [],
+          "foodClass": "Composite",
+          "totalRefuse": 0,
+          "dataType": "Sample",
+          "foodGroup": {
+            "id": 1,
+            "code": "0100",
+            "description": "Dairy and Egg Products"
+          }
+        }
+      },
+      {
+        "id": 46701,
+        "foodDescription": "EGG, GRADE A, LARGE, WHOLE, RAW, FRESH",
+        "inputFood": {
+          "fdcId": 748899,
+          "description": "EGG, GRADE A, LARGE, WHOLE, RAW, FRESH",
+          "publicationDate": "12/16/2019",
+          "foodAttributeTypes": [],
+          "foodClass": "Composite",
+          "totalRefuse": 0,
+          "dataType": "Sample",
+          "foodGroup": {
+            "id": 1,
+            "code": "0100",
+            "description": "Dairy and Egg Products"
+          }
+        }
+      }
+    ],
+    "foodComponents": [],
+    "foodAttributes": [],
+    "nutrientConversionFactors": [
+      {
+        "id": 22719,
+        "proteinValue": 4.36,
+        "fatValue": 9.02,
+        "carbohydrateValue": 3.68,
+        "type": ".CalorieConversionFactor",
+        "name": "Calories From Proximates"
+      },
+      {
+        "id": 22720,
+        "value": 6.25,
+        "type": ".ProteinConversionFactor",
+        "name": "Protein From Nitrogen"
+      }
+    ],
+    "ndbNumber": 1123,
+    "isHistoricalReference": false,
+    "foodCategory": {
+      "id": 1,
+      "code": "0100",
+      "description": "Dairy and Egg Products"
+    }
+  }

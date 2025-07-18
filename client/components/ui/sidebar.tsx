@@ -4,18 +4,16 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard,
   UtensilsCrossed,
   Users,
   UserCircle,
-  Settings,
 } from "lucide-react"
 
 const sidebarItems = [
   {
-    title: "Dashboard",
-    href: "/protected",
-    icon: LayoutDashboard,
+    title: "Social Feed",
+    href: "/protected/social",
+    icon: Users,
   },
   {
     title: "Food Log",
@@ -23,19 +21,9 @@ const sidebarItems = [
     icon: UtensilsCrossed,
   },
   {
-    title: "Social Feed",
-    href: "/protected/social",
-    icon: Users,
-  },
-  {
     title: "Profile",
     href: "/protected/profile",
     icon: UserCircle,
-  },
-  {
-    title: "Settings",
-    href: "/protected/settings",
-    icon: Settings,
   },
 ]
 

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FindFriendsDialog } from "@/components/find-friends-dialog";
 import { getApiUrl, decodeJWT } from "@/lib/utils";
 import { toast } from "sonner";
 import Cookies from 'js-cookie';
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -17,34 +18,101 @@ interface User {
 
 interface FoodEntry {
   _id: string;
-  userId: string;
-  foodName: string;
+  description: string;
+  dataType: string;
+  brandOwner?: string;
+  brandName?: string;
+  servingAmount: number;
+  servingUnit: string;
   nutrients: {
-    calories: string;
-    protein: string;
-    carbohydrates: string;
-    fat: string;
+    calories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
   };
-  dateAdded: string;
-  user: User;
-  mealPhoto?: { url: string };
-  mealType?: string;
+}
+
+interface Meal {
+  _id: string;
+  user: string;
+  mealTime: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  date: string;
+  foods: FoodEntry[];
+  photo?: {
+    url: string;
+    publicId: string;
+  };
+}
+
+interface MealWithUser extends Meal {
+  userData: User;
 }
 
 export default function SocialPage() {
   const [following, setFollowing] = useState<User[]>([]);
-  const [feedEntries, setFeedEntries] = useState<FoodEntry[]>([]);
+  const [feedMeals, setFeedMeals] = useState<MealWithUser[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchFeedMeals = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch meals for all following users
+      const mealsPromises = following.map(async user => {
+        const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+        const userMeals = await Promise.all(
+          mealTypes.map(type =>
+            fetch(`${getApiUrl()}/api/meal/${user.id}/${today}/${type}`)
+              .then(res => res.json())
+              .then(data => data.success && data.meal ? { ...data.meal, userData: user } : null)
+          )
+        );
+        return userMeals.filter(Boolean);
+      });
+
+      const results = await Promise.all(mealsPromises);
+      
+      // Flatten and sort by date and meal time
+      const allMeals = results
+        .flat()
+        .sort((a, b) => {
+          // First compare dates
+          const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dateComparison !== 0) return dateComparison;
+
+          // If same date, sort by meal time (reverse order)
+          const mealOrder: Record<'breakfast' | 'lunch' | 'dinner' | 'snack', number> = {
+            breakfast: 0,
+            lunch: 1,
+            dinner: 2,
+            snack: 3
+          };
+          // Ensure meal times are typed correctly
+          const aMealTime = a.mealTime as keyof typeof mealOrder;
+          const bMealTime = b.mealTime as keyof typeof mealOrder;
+          return mealOrder[bMealTime] - mealOrder[aMealTime];
+        });
+
+      setFeedMeals(allMeals);
+    } catch (error) {
+      console.error('Error fetching feed:', error);
+      toast.error('Failed to fetch feed');
+    } finally {
+      setLoading(false);
+    }
+  }, [following]); // Add following as a dependency since it's used in the function
 
   useEffect(() => {
     fetchFollowing();
-  }, []);
+  }, []); // Run once on mount
 
   useEffect(() => {
     if (following.length > 0) {
-      fetchFeedEntries();
+      fetchFeedMeals();
     }
-  }, [following]);
+  }, [following, fetchFeedMeals]); // Add fetchFeedMeals to dependencies
 
   const fetchFollowing = async () => {
     const token = Cookies.get('jwtToken');
@@ -84,48 +152,14 @@ export default function SocialPage() {
     }
   };
 
-  const fetchFeedEntries = async () => {
-    setLoading(true);
-    try {
-      // Get today's date in YYYY-MM-DD format
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Fetch food entries for all following users
-      const entriesPromises = following.map(user =>
-        fetch(`${getApiUrl()}/api/getfoodentries`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            date: today
-          })
-        }).then(res => res.json())
-      );
-
-      const results = await Promise.all(entriesPromises);
-      
-      // Combine all entries and add user information
-      const allEntries = results.flatMap((result, index) => 
-        result.foodEntries.map((entry: FoodEntry) => ({
-          ...entry,
-          user: following[index]
-        }))
-      );
-
-      // Sort by date, newest first
-      allEntries.sort((a, b) => 
-        new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()
-      );
-
-      setFeedEntries(allEntries);
-    } catch (error) {
-      console.error('Error fetching feed:', error);
-      toast.error('Failed to fetch feed');
-    } finally {
-      setLoading(false);
-    }
+  // Calculate total nutrients for a meal
+  const calculateMealTotals = (foods: FoodEntry[]) => {
+    return foods.reduce((acc, food) => ({
+      calories: acc.calories + food.nutrients.calories,
+      protein: acc.protein + food.nutrients.protein,
+      carbs: acc.carbs + food.nutrients.carbohydrates,
+      fat: acc.fat + food.nutrients.fat
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
   return (
@@ -137,83 +171,100 @@ export default function SocialPage() {
       <div className="flex justify-center gap-8">
         {/* Feed Column */}
         <div className="w-[500px] space-y-6">
-          {/* Feed entries will go here */}
           {loading ? (
             <p className="text-center text-muted-foreground">Loading feed...</p>
-          ) : feedEntries.length === 0 ? (
+          ) : feedMeals.length === 0 ? (
             <p className="text-center text-muted-foreground">
-              No food entries from people you follow today.
+              No meals from people you follow today.
             </p>
           ) : (
             <div className="space-y-6">
-              {feedEntries.map((entry) => (
-                <div
-                  key={entry._id}
-                  className="bg-card rounded-lg border overflow-hidden"
-                >
-                  {/* Header with user info */}
-                  <div className="p-4 flex items-center gap-3 border-b">
-                    {entry.user.profilePic ? (
-                      <img
-                        src={entry.user.profilePic}
-                        alt={`${entry.user.firstName}'s profile`}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm">
-                        {entry.user.firstName[0]}
-                        {entry.user.lastName[0]}
+              {feedMeals.map((meal) => {
+                const totals = calculateMealTotals(meal.foods);
+                return (
+                  <div
+                    key={meal._id}
+                    className="bg-card rounded-lg border overflow-hidden"
+                  >
+                    {/* Header with user info */}
+                    <div className="p-4 flex items-center gap-3 border-b">
+                      {meal.userData.profilePic ? (
+                        <div className="relative w-10 h-10">
+                          <Image
+                            src={meal.userData.profilePic}
+                            alt={`${meal.userData.firstName}'s profile`}
+                            fill
+                            className="rounded-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm">
+                          {meal.userData.firstName[0]}
+                          {meal.userData.lastName[0]}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium">
+                          {meal.userData.firstName} {meal.userData.lastName}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(meal.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {' • '}
+                          {meal.mealTime.charAt(0).toUpperCase() + meal.mealTime.slice(1)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Meal Photo */}
+                    {meal.photo?.url && (
+                      <div className="aspect-square w-full relative">
+                        <Image
+                          src={meal.photo.url}
+                          alt={`${meal.mealTime} meal`}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
                     )}
-                    <div>
-                      <p className="font-medium">
-                        {entry.user.firstName} {entry.user.lastName}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(entry.dateAdded).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Meal Photo */}
-                  {entry.mealPhoto?.url && (
-                    <div className="aspect-square w-full relative">
-                      <img
-                        src={entry.mealPhoto.url}
-                        alt={`${entry.mealType} meal`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
+                    {/* Food list and stats */}
+                    <div className="p-4">
+                      {/* Food items */}
+                      <div className="mb-4 space-y-2">
+                        {meal.foods.map((food) => (
+                          <div key={food._id} className="text-sm">
+                            <span className="font-medium">{food.description}</span>
+                            <span className="text-muted-foreground">
+                              {' • '}
+                              {food.servingAmount} {food.servingUnit}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
 
-                  {/* Food name and stats */}
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <p className="text-lg font-semibold">{entry.foodName}</p>
-                    </div>
-
-                    {/* Macro stats */}
-                    <div className="grid grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Calories</p>
-                        <p className="font-medium">{entry.nutrients.calories} kcal</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Protein</p>
-                        <p className="font-medium">{entry.nutrients.protein}g</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Carbs</p>
-                        <p className="font-medium">{entry.nutrients.carbohydrates}g</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Fat</p>
-                        <p className="font-medium">{entry.nutrients.fat}g</p>
+                      {/* Macro stats */}
+                      <div className="grid grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Calories</p>
+                          <p className="font-medium">{totals.calories.toFixed(0)} kcal</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Protein</p>
+                          <p className="font-medium">{totals.protein.toFixed(1)}g</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Carbs</p>
+                          <p className="font-medium">{totals.carbs.toFixed(1)}g</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Fat</p>
+                          <p className="font-medium">{totals.fat.toFixed(1)}g</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -238,11 +289,14 @@ export default function SocialPage() {
                       className="flex items-center gap-3 p-2 rounded-lg border"
                     >
                       {user.profilePic ? (
-                        <img
-                          src={user.profilePic}
-                          alt={`${user.firstName}'s profile`}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
+                        <div className="relative w-10 h-10">
+                          <Image
+                            src={user.profilePic}
+                            alt={`${user.firstName}'s profile`}
+                            fill
+                            className="rounded-full object-cover"
+                          />
+                        </div>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
                           {user.firstName[0]}
