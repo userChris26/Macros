@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FindFriendsDialog } from "@/components/find-friends-dialog";
 import { getApiUrl, decodeJWT } from "@/lib/utils";
 import { toast } from "sonner";
 import Cookies from 'js-cookie';
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -52,55 +53,7 @@ export default function SocialPage() {
   const [feedMeals, setFeedMeals] = useState<MealWithUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFollowing();
-  }, []);
-
-  useEffect(() => {
-    if (following.length > 0) {
-      fetchFeedMeals();
-    }
-  }, [following]);
-
-  const fetchFollowing = async () => {
-    const token = Cookies.get('jwtToken');
-    if (!token) {
-      toast.error('Please log in to view your social feed');
-      return;
-    }
-
-    const decoded = decodeJWT(token);
-    if (!decoded) {
-      toast.error('Invalid session, please log in again');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${getApiUrl()}/api/following/${decoded.userId}`);
-      const data = await response.json();
-      
-      if (data.error) {
-        toast.error(data.error);
-        return;
-      }
-
-      // Transform the data to match our User interface
-      const followingUsers = data.following.map((follow: any) => ({
-        id: follow.followingId._id,
-        firstName: follow.followingId.firstName,
-        lastName: follow.followingId.lastName,
-        email: follow.followingId.email,
-        profilePic: follow.followingId.profilePic || null
-      }));
-      
-      setFollowing(followingUsers);
-    } catch (error) {
-      console.error('Error fetching following:', error);
-      toast.error('Failed to fetch following');
-    }
-  };
-
-  const fetchFeedMeals = async () => {
+  const fetchFeedMeals = useCallback(async () => {
     setLoading(true);
     try {
       // Get today's date in YYYY-MM-DD format
@@ -149,6 +102,54 @@ export default function SocialPage() {
     } finally {
       setLoading(false);
     }
+  }, [following]); // Add following as a dependency since it's used in the function
+
+  useEffect(() => {
+    fetchFollowing();
+  }, []); // Run once on mount
+
+  useEffect(() => {
+    if (following.length > 0) {
+      fetchFeedMeals();
+    }
+  }, [following, fetchFeedMeals]); // Add fetchFeedMeals to dependencies
+
+  const fetchFollowing = async () => {
+    const token = Cookies.get('jwtToken');
+    if (!token) {
+      toast.error('Please log in to view your social feed');
+      return;
+    }
+
+    const decoded = decodeJWT(token);
+    if (!decoded) {
+      toast.error('Invalid session, please log in again');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/following/${decoded.userId}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Transform the data to match our User interface
+      const followingUsers = data.following.map((follow: any) => ({
+        id: follow.followingId._id,
+        firstName: follow.followingId.firstName,
+        lastName: follow.followingId.lastName,
+        email: follow.followingId.email,
+        profilePic: follow.followingId.profilePic || null
+      }));
+      
+      setFollowing(followingUsers);
+    } catch (error) {
+      console.error('Error fetching following:', error);
+      toast.error('Failed to fetch following');
+    }
   };
 
   // Calculate total nutrients for a meal
@@ -188,11 +189,14 @@ export default function SocialPage() {
                     {/* Header with user info */}
                     <div className="p-4 flex items-center gap-3 border-b">
                       {meal.userData.profilePic ? (
-                        <img
-                          src={meal.userData.profilePic}
-                          alt={`${meal.userData.firstName}'s profile`}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
+                        <div className="relative w-10 h-10">
+                          <Image
+                            src={meal.userData.profilePic}
+                            alt={`${meal.userData.firstName}'s profile`}
+                            fill
+                            className="rounded-full object-cover"
+                          />
+                        </div>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm">
                           {meal.userData.firstName[0]}
@@ -214,10 +218,11 @@ export default function SocialPage() {
                     {/* Meal Photo */}
                     {meal.photo?.url && (
                       <div className="aspect-square w-full relative">
-                        <img
+                        <Image
                           src={meal.photo.url}
                           alt={`${meal.mealTime} meal`}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
                         />
                       </div>
                     )}
@@ -284,11 +289,14 @@ export default function SocialPage() {
                       className="flex items-center gap-3 p-2 rounded-lg border"
                     >
                       {user.profilePic ? (
-                        <img
-                          src={user.profilePic}
-                          alt={`${user.firstName}'s profile`}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
+                        <div className="relative w-10 h-10">
+                          <Image
+                            src={user.profilePic}
+                            alt={`${user.firstName}'s profile`}
+                            fill
+                            className="rounded-full object-cover"
+                          />
+                        </div>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
                           {user.firstName[0]}

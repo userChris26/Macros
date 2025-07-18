@@ -14,6 +14,7 @@ interface FoodSearchDialogProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   date?: string; // optional date, defaults to today
+  onFoodAdded?: () => void; // callback when food is added successfully
 }
 
 interface SearchResult {
@@ -42,7 +43,7 @@ interface FoodDetails {
   };
 }
 
-export function FoodSearchDialog({ open, onOpenChange, userId, date }: FoodSearchDialogProps) {
+export function FoodSearchDialog({ open, onOpenChange, userId, date, onFoodAdded }: FoodSearchDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -117,6 +118,8 @@ export function FoodSearchDialog({ open, onOpenChange, userId, date }: FoodSearc
         setSearchResults([]);
         setSelectedFood(null);
         setServingAmount(1);
+        // Call the callback if provided
+        onFoodAdded?.();
       } else {
         toast.error(data.error || 'Failed to add food');
       }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { FoodSearchDialog } from "@/components/food-search-dialog";
@@ -93,8 +93,8 @@ export default function FoodLogPage() {
   const decodedToken = token ? decodeJWT(token) : null;
   const userId = decodedToken?.userId;
 
-  // Fetch meal data for the selected date
-  const fetchMealData = async () => {
+  // Memoize fetchMealData to prevent recreation on every render
+  const fetchMealData = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -114,7 +114,6 @@ export default function FoodLogPage() {
             
             // Calculate macros for this meal
             data.meal.foods.forEach((food: FoodEntry) => {
-              // Use nutrients directly without multiplying by serving amount
               const calories = food.nutrients.calories;
               const protein = food.nutrients.protein;
               const carbs = food.nutrients.carbohydrates;
@@ -146,7 +145,7 @@ export default function FoodLogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, formattedDate]); // Include dependencies that fetchMealData uses
 
   useEffect(() => {
     if (!userId) {
@@ -154,7 +153,7 @@ export default function FoodLogPage() {
       return;
     }
     fetchMealData();
-  }, [userId, selectedDate]);
+  }, [userId, selectedDate, fetchMealData]); // Now we can safely include fetchMealData
 
   const handleDeleteEntry = async (entryId: string, mealType: string) => {
     try {
@@ -181,6 +180,11 @@ export default function FoodLogPage() {
 
   const handlePhotoUpdate = () => {
     fetchMealData();
+  };
+
+  const handleFoodAdded = () => {
+    fetchMealData(); // Refresh data when food is added
+    setIsDialogOpen(false); // Close the dialog
   };
 
   const renderMealSection = (mealType: MealType) => {
@@ -315,6 +319,7 @@ export default function FoodLogPage() {
         onOpenChange={setIsDialogOpen}
         userId={userId || ''}
         date={formattedDate}
+        onFoodAdded={handleFoodAdded} // Add callback for when food is added
       />
     </div>
   );

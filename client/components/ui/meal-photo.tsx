@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Utensils } from "lucide-react"
+import Image from "next/image"
 
 interface MealPhotoProps extends React.HTMLAttributes<HTMLDivElement> {
   photoUrl?: string;
@@ -19,11 +20,14 @@ export function MealPhoto({ photoUrl, mealType, className, ...props }: MealPhoto
       {...props}
     >
       {photoUrl ? (
-        <img
-          src={photoUrl}
-          alt={`${mealType} meal`}
-          className="h-full w-full object-cover"
-        />
+        <div className="relative h-full w-full">
+          <Image
+            src={photoUrl}
+            alt={`${mealType} meal`}
+            fill
+            className="object-cover"
+          />
+        </div>
       ) : (
         <div className="flex h-full w-full items-center justify-center">
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
