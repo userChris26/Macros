@@ -56,19 +56,27 @@ export default function SocialPage() {
   const fetchFeedMeals = useCallback(async () => {
     setLoading(true);
     try {
-      // Get today's date in YYYY-MM-DD format
-      const today = new Date().toISOString().split('T')[0];
+      // Get dates for the last 7 days
+      const dates = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        return date.toISOString().split('T')[0];
+      });
       
-      // Fetch meals for all following users
+      // Fetch meals for all following users for each day
       const mealsPromises = following.map(async user => {
         const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
-        const userMeals = await Promise.all(
+        
+        // Fetch all meals for each day
+        const userMealsPromises = dates.flatMap(date =>
           mealTypes.map(type =>
-            fetch(`${getApiUrl()}/api/meal/${user.id}/${today}/${type}`)
+            fetch(`${getApiUrl()}/api/meal/${user.id}/${date}/${type}`)
               .then(res => res.json())
               .then(data => data.success && data.meal ? { ...data.meal, userData: user } : null)
           )
         );
+
+        const userMeals = await Promise.all(userMealsPromises);
         return userMeals.filter(Boolean);
       });
 
@@ -175,12 +183,16 @@ export default function SocialPage() {
             <p className="text-center text-muted-foreground">Loading feed...</p>
           ) : feedMeals.length === 0 ? (
             <p className="text-center text-muted-foreground">
-              No meals from people you follow today.
+              No meals from people you follow in the last 7 days.
             </p>
           ) : (
             <div className="space-y-6">
               {feedMeals.map((meal) => {
                 const totals = calculateMealTotals(meal.foods);
+                const mealDate = new Date(meal.date);
+                const isToday = new Date().toDateString() === mealDate.toDateString();
+                const dateDisplay = isToday ? 'Today' : mealDate.toLocaleDateString(undefined, { weekday: 'long' });
+                
                 return (
                   <div
                     key={meal._id}
@@ -208,7 +220,7 @@ export default function SocialPage() {
                           {meal.userData.firstName} {meal.userData.lastName}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(meal.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {dateDisplay} • {new Date(meal.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           {' • '}
                           {meal.mealTime.charAt(0).toUpperCase() + meal.mealTime.slice(1)}
                         </p>
