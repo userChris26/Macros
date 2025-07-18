@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 import { Hero } from "@/components/hero";
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -19,6 +24,15 @@ function FeatureCard({ icon: Icon, title, description }: {
 }
 
 export default function Index() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = Cookies.get('jwtToken');
+    if (token) {
+      router.replace('/protected/social');
+    }
+  }, [router]);
+
   return (
     <div className="flex-1 w-full flex flex-col items-center">
       <div className="w-full p-4 flex justify-between items-center max-w-7xl mx-auto">
