@@ -7,7 +7,7 @@ const getFrontendUrl = () => {
     return process.env.FRONTEND_URL;
   }
   return process.env.NODE_ENV === 'production' 
-    ? 'https://cop4331iscool.xyz'  // Production domain
+    ? 'http://cop4331iscool.xyz'  // Production domain
     : 'http://localhost:3000';
 };
 
