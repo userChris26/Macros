@@ -1,0 +1,73 @@
+{
+    "totalHits": 95746,
+    "currentPage": 1,
+    "totalPages": 3830,
+    "pageList": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "foodSearchCriteria": {
+      "query": "egg whole",
+      "generalSearchInput": "egg whole",
+      "pageNumber": 1,
+      "numberOfResultsPerPage": 50,
+      "pageSize": 25,
+      "requireAllWords": false
+    },
+    "foods": [
+      {
+        "fdcId": 748967,
+        "description": "Eggs, Grade A, Large, egg whole",
+        "commonNames": "",
+        "additionalDescriptions": "",
+        "dataType": "Foundation",
+        "ndbNumber": 1123,
+        "publishedDate": "2019-12-16",
+        "foodCategory": "Dairy and Egg Products",
+        "mostRecentAcquisitionDate": "2019-07-08",
+        "allHighlightFields": "",
+        "score": 539.16833,
+        "microbes": []
+      },
+      {
+        "fdcId": 2707158,
+        "description": "Egg, whole, fried with oil",
+        "commonNames": "",
+        "additionalDescriptions": "over easy, medium, or hard;sunny side up",
+        "dataType": "Survey (FNDDS)",
+        "foodCode": 31105030,
+        "publishedDate": "2024-10-31",
+        "foodCategory": "Eggs and omelets",
+        "foodCategoryId": 3301864,
+        "allHighlightFields": "",
+        "score": 488.4426,
+        "microbes": [],
+        "foodNutrients": [
+        ],
+        "foodPortions": [
+        ]
+      },
+      {
+        "fdcId": 2575290,
+        "description": "EGG",
+        "dataType": "Branded",
+        "gtinUpc": "040000449270",
+        "publishedDate": "2023-06-29",
+        "brandOwner": "Mars Chocolate North America LLC",
+        "brandName": "SNICKERS",
+        "ingredients": "MILK CHOCOLATE (SUGAR, COCOA BUTTER, CHOCOLATE, SKIM MILK, LACTOSE, MILKFAT, SOY LECITHIN, ARTIFICIAL FLAVOR), PEANUTS, SUGAR, INVERT SUGAR, HYDROGENATED PALM KERNEL OIL AND/OR PALM OIL, CORN SYRUP, SKIM MILK, LESS THAN 2% - BUTTER, MILKFAT, PARTIALLY HYDROGENATED SOYBEAN OIL, SALT, SOY LECITHIN, POTASSIUM SORBATE TO MAINTAIN FRESHNESS, ARTIFICIAL FLAVOR.",
+        "marketCountry": "United States",
+        "foodCategory": "Candy",
+        "modifiedDate": "2023-05-04",
+        "dataSource": "LI",
+        "packageWeight": "1.10 oz/31.2 g",
+        "servingSizeUnit": "GRM",
+        "servingSize": 31.2000007629395,
+        "householdServingFullText": "1 EGG",
+        "shortDescription": "",
+        "tradeChannels": [
+          "NO_TRADE_CHANNEL"
+        ],
+        "allHighlightFields": "",
+        "score": 1124.6783,
+        "microbes": [],
+        "foodNutrients": [
+    ]
+} 

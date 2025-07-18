@@ -2,64 +2,126 @@
 
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { getApiUrl } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface FoodSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onFoodSelect: (food: any, servingSize: number, mealType: string) => void;
+  userId: string;
+  date?: string; // optional date, defaults to today
 }
 
-export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearchDialogProps) {
+interface SearchResult {
+  fdcId: number;
+  description: string;
+  dataType: string;
+  brandOwner?: string;
+  brandName?: string;
+}
+
+interface FoodDetails {
+  fdcId: number;
+  description: string;
+  dataType: string;
+  nutrients: {
+    calories: number;
+    protein: number;
+    fat: number;
+    carbohydrates: number;
+  };
+  portion: {
+    gramWeight: number;
+    servingsPerHundredGrams: number;
+    modifier: string;
+    measureUnit: string;
+  };
+}
+
+export function FoodSearchDialog({ open, onOpenChange, userId, date }: FoodSearchDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedFood, setSelectedFood] = useState<any | null>(null);
-  const [servingSize, setServingSize] = useState('100');
+  const [selectedFood, setSelectedFood] = useState<FoodDetails | null>(null);
+  const [servingAmount, setServingAmount] = useState(1);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
     setLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/api/searchfoods`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: searchQuery }),
-      });
-
+      const response = await fetch(`${getApiUrl()}/api/searchfoods?query=${encodeURIComponent(searchQuery)}`);
       const data = await response.json();
+      
       if (data.success) {
         setSearchResults(data.foods || []);
       } else {
-        console.error('Search failed:', data.error);
+        toast.error(data.error || 'Failed to search foods');
       }
     } catch (error) {
-      console.error('Search error:', error);
+      toast.error('Failed to search foods');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFoodSelect = (food: any) => {
-    setSelectedFood(food);
+  const handleFoodSelect = async (food: SearchResult) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${getApiUrl()}/api/food/${food.fdcId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setSelectedFood(data.food);
+        // Set default serving amount based on servingsPerHundredGrams
+        setServingAmount(data.food.portion.servingsPerHundredGrams || 1);
+      } else {
+        toast.error(data.error || 'Failed to get food details');
+      }
+    } catch (error) {
+      toast.error('Failed to get food details');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddFood = (mealType: string) => {
-    if (selectedFood && servingSize) {
-      onFoodSelect(selectedFood, parseFloat(servingSize), mealType);
-      onOpenChange(false);
-      // Reset state
-      setSearchQuery('');
-      setSearchResults([]);
-      setSelectedFood(null);
-      setServingSize('100');
+  const handleAddFood = async (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+    if (!selectedFood) return;
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/addfood`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          fdcId: selectedFood.fdcId,
+          servingAmount,
+          mealType,
+          date
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Food added successfully');
+        onOpenChange(false);
+        // Reset state
+        setSearchQuery('');
+        setSearchResults([]);
+        setSelectedFood(null);
+        setServingAmount(1);
+      } else {
+        toast.error(data.error || 'Failed to add food');
+      }
+    } catch (error) {
+      toast.error('Failed to add food');
     }
   };
 
@@ -100,21 +162,9 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
                   onClick={() => handleFoodSelect(food)}
                 >
                   <div className="font-medium">{food.description}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {food.brandOwner || 'Generic'}
-                  </div>
-                  {selectedFood?.fdcId === food.fdcId && (
-                    <div className="mt-2 text-sm">
-                      {food.foodNutrients
-                        ?.filter((n: any) => 
-                          ['Energy', 'Protein', 'Total lipid (fat)', 'Carbohydrate, by difference']
-                          .includes(n.nutrientName)
-                        )
-                        .map((nutrient: any) => (
-                          <div key={nutrient.nutrientId}>
-                            {nutrient.nutrientName}: {nutrient.value} {nutrient.unitName}
-                          </div>
-                        ))}
+                  {food.dataType === 'Branded' && (
+                    <div className="text-sm text-muted-foreground">
+                      {food.brandName} • {food.brandOwner}
                     </div>
                   )}
                 </div>
@@ -131,14 +181,31 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
         {selectedFood && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="servingSize">Serving Size (g)</Label>
-              <Input
-                id="servingSize"
-                type="number"
-                min="0"
-                value={servingSize}
-                onChange={(e) => setServingSize(e.target.value)}
-              />
+              <Label htmlFor="servingAmount">
+                Serving size
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="servingAmount"
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={servingAmount}
+                  onChange={(e) => setServingAmount(parseFloat(e.target.value))}
+                />
+                <span className="text-sm text-muted-foreground">
+                  ({(servingAmount * selectedFood.portion.gramWeight).toFixed(0)}g)
+                </span>
+              </div>
+              {/* Show nutrients for selected amount */}
+              <div className="mt-2 text-sm space-y-1">
+                <div className="grid grid-cols-2 gap-x-4">
+                  <div>Calories: {(selectedFood.nutrients.calories * servingAmount).toFixed(0)}</div>
+                  <div>Protein: {(selectedFood.nutrients.protein * servingAmount).toFixed(1)}g</div>
+                  <div>Carbs: {(selectedFood.nutrients.carbohydrates * servingAmount).toFixed(1)}g</div>
+                  <div>Fat: {(selectedFood.nutrients.fat * servingAmount).toFixed(1)}g</div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -148,7 +215,6 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
           <div className="grid grid-cols-2 gap-2 mt-4">
             <Button
               onClick={() => handleAddFood('breakfast')}
-              disabled={!selectedFood || !servingSize}
               variant="outline"
               className="w-full"
             >
@@ -156,7 +222,6 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
             </Button>
             <Button
               onClick={() => handleAddFood('lunch')}
-              disabled={!selectedFood || !servingSize}
               variant="outline"
               className="w-full"
             >
@@ -164,7 +229,6 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
             </Button>
             <Button
               onClick={() => handleAddFood('dinner')}
-              disabled={!selectedFood || !servingSize}
               variant="outline"
               className="w-full"
             >
@@ -172,7 +236,6 @@ export function FoodSearchDialog({ open, onOpenChange, onFoodSelect }: FoodSearc
             </Button>
             <Button
               onClick={() => handleAddFood('snack')}
-              disabled={!selectedFood || !servingSize}
               variant="outline"
               className="w-full"
             >

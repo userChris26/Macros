@@ -48,34 +48,6 @@ const Network = mongoose.model('Network', NetworkSchema);
 const Food = mongoose.model('Food', UserSchema);
 
 
-// USDA Food API search function
-async function searchUSDAFood(query) {
-	const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
-	console.log('Searching USDA API for:', query);
-	console.log('Using API key:', apiKey ? 'API key loaded' : 'No API key');
-	
-	try {
-		const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=25`;
-		console.log('USDA API URL:', url);
-		
-		const response = await fetch(url);
-		console.log('USDA API response status:', response.status);
-		
-		if (!response.ok) {
-		throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
-		}
-		
-		const data = await response.json();
-		console.log('USDA API response received, foods count:', data.foods ? data.foods.length : 0);
-		
-		return data.foods || [];
-	} catch (error) {
-		console.error('Error searching USDA API:', error);
-		throw error;
-	}
-}
-
-
 exports.setApp = function( app, client )
 {
 
@@ -509,133 +481,6 @@ exports.setApp = function( app, client )
 			res.status(500).json({ error: 'Could not update profile' });
 		}
 	});
-
-
-	// ─── Food Endpoints
-    app.post('/api/searchfoods', async (req, res) => {
-        console.log('=== SEARCH FOODS ROUTE CALLED ===');
-        const { query } = req.body;
-        
-        console.log('Food search request:', { query });
-        
-        if (!query) {
-            return res.status(400).json({ error: 'Search query is required' });
-        }
-
-        try {
-            const foods = await searchUSDAFood(query);
-            console.log('Returning', foods.length, 'foods');
-            res.json({
-                success: true,
-                foods: foods
-            });
-        } catch (error) {
-            console.error('Error searching USDA API:', error);
-            res.status(500).json({ 
-                error: 'Failed to search foods',
-                details: error.message 
-            });
-        }
-    });
-
-	// Add food route
-    app.post('/api/addfood', async (req, res) => {
-        console.log('=== ADD FOOD ROUTE CALLED ===');
-        console.log('Full request body:', JSON.stringify(req.body, null, 2));
-        
-        try {
-            const { userId, fdcId, servingSize, date, mealType } = req.body;
-            
-            console.log('Parsed fields:', { userId, fdcId, servingSize, date, mealType });
-            
-            // Validation
-            if (!userId || !fdcId || !servingSize) {
-                console.log('ADD FOOD ERROR: Missing required fields');
-                return res.status(400).json({ 
-                    error: 'userId, fdcId, and servingSize are required',
-                    received: { userId, fdcId, servingSize }
-                });
-            }
-
-            // First, get food details from USDA API
-            console.log('Fetching food details from USDA API for fdcId:', fdcId);
-            const foodDetailsUrl = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${process.env.USDA_API_KEY || 'DEMO_KEY'}`;
-            const foodResponse = await fetch(foodDetailsUrl);
-            
-            if (!foodResponse.ok) {
-                throw new Error(`Failed to fetch food details: ${foodResponse.status}`);
-            }
-            
-            const foodData = await foodResponse.json();
-            console.log('Food data received:', foodData.description);
-            
-            // Extract nutrition data
-            const nutrients = {};
-            if (foodData.foodNutrients) {
-                foodData.foodNutrients.forEach(nutrient => {
-                    const name = nutrient.nutrient?.name?.toLowerCase();
-                    if (name) {
-                        if (name.includes('energy') || name.includes('calorie')) {
-                            nutrients.calories = ((nutrient.amount || 0) * servingSize / 100).toFixed(1);
-                        } else if (name.includes('protein')) {
-                            nutrients.protein = ((nutrient.amount || 0) * servingSize / 100).toFixed(1);
-                        } else if (name.includes('carbohydrate')) {
-                            nutrients.carbohydrates = ((nutrient.amount || 0) * servingSize / 100).toFixed(1);
-                        } else if (name.includes('fat') && !name.includes('fatty')) {
-                            nutrients.fat = ((nutrient.amount || 0) * servingSize / 100).toFixed(1);
-                        } else if (name.includes('fiber')) {
-                            nutrients.fiber = ((nutrient.amount || 0) * servingSize / 100).toFixed(1);
-                        } else if (name.includes('sugar')) {
-                            nutrients.sugar = ((nutrient.amount || 0) * servingSize / 100).toFixed(1);
-                        } else if (name.includes('sodium')) {
-                            nutrients.sodium = ((nutrient.amount || 0) * servingSize / 100).toFixed(1);
-                        }
-                    }
-                });
-            }
-
-            const newFoodEntry = new FoodEntry({
-                userId: userId,
-                fdcId: parseInt(fdcId),
-                foodName: foodData.description || 'Unknown Food',
-                brandOwner: foodData.brandOwner || '',
-                servingSize: parseFloat(servingSize),
-                servingSizeUnit: 'g',
-                mealType: mealType || 'snack', // Add mealType here
-                nutrients: {
-                    calories: nutrients.calories || '0',
-                    protein: nutrients.protein || '0', 
-                    carbohydrates: nutrients.carbohydrates || '0',
-                    fat: nutrients.fat || '0',
-                    fiber: nutrients.fiber || '0',
-                    sugar: nutrients.sugar || '0',
-                    sodium: nutrients.sodium || '0'
-                },
-                dateAdded: date || new Date().toISOString().split('T')[0],
-                timestamp: new Date().toISOString()
-            });
-            
-            console.log('New food entry to insert:', JSON.stringify(newFoodEntry, null, 2));
-            
-            const result = await newFoodEntry.save();
-            console.log('Food entry added successfully:', result._id);
-            
-            res.json({
-                success: true,
-                message: 'Food has been added to your diary',
-                entryId: result._id,
-                entry: newFoodEntry
-            });
-            
-        } catch (error) {
-            console.error('ADD FOOD ERROR:', error);
-            console.error('Error stack:', error.stack);
-            res.status(500).json({ 
-                error: 'Failed to add food entry',
-                details: error.message
-            });
-        }
-    });
 
 	// Get food entries route
     app.post('/api/getfoodentries', async (req, res) => {
@@ -1205,7 +1050,24 @@ exports.setApp = function( app, client )
             $lt: nextDay
           },
           mealTime: mealType
-        }).populate('foods');
+        }).populate({
+          path: 'foods',
+          model: 'FoodEntry'
+        });
+
+        if (meal) {
+          console.log('Found meal:', {
+            mealId: meal._id,
+            mealTime: meal.mealTime,
+            foodCount: meal.foods.length,
+            foods: meal.foods.map(food => ({
+              id: food._id,
+              description: food.description,
+              servingAmount: food.servingAmount,
+              nutrients: food.nutrients
+            }))
+          });
+        }
 
         res.json({
           success: true,
@@ -1580,6 +1442,241 @@ app.get('/api/meal/:mealId', async (req, res) => {
     } catch (error) {
         console.error('Get meal details error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get food details by ID
+app.get('/api/food/:fdcId', async (req, res) => {
+    const { fdcId } = req.params;
+    
+    try {
+        const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
+        const url = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${apiKey}&nutrients=203,204,205,208`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`USDA API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+
+        // Get portion info
+        const portion = data.foodPortions?.[0] || { gramWeight: 100 };
+        const servingsPerHundredGrams = Math.round(100 / portion.gramWeight);
+
+        // Extract the nutrients we want
+        const nutrients = {};
+        data.foodNutrients?.forEach(nutrient => {
+            switch (nutrient.nutrient?.id) {
+                case 1008: // Energy
+                    nutrients.calories = nutrient.amount / servingsPerHundredGrams;
+                    break;
+                case 1003: // Protein
+                    nutrients.protein = nutrient.amount / servingsPerHundredGrams;
+                    break;
+                case 1004: // Total lipid (fat)
+                    nutrients.fat = nutrient.amount / servingsPerHundredGrams;
+                    break;
+                case 1005: // Carbohydrate
+                    nutrients.carbohydrates = nutrient.amount / servingsPerHundredGrams;
+                    break;
+            }
+        });
+
+        // Format the response
+        const result = {
+            fdcId: data.fdcId,
+            description: data.description,
+            dataType: data.dataType,
+            nutrients,
+            portion: {
+                gramWeight: portion.gramWeight,
+                servingsPerHundredGrams,
+                modifier: portion.modifier,
+                measureUnit: portion.measureUnit?.name
+            }
+        };
+
+        res.json({
+            success: true,
+            food: result
+        });
+    } catch (error) {
+        console.error('Error fetching food details:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch food details',
+            details: error.message 
+        });
+    }
+});
+
+
+// Food search endpoint
+app.get('/api/searchfoods', async (req, res) => {
+    const { query } = req.query;
+    
+    if (!query) {
+        return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    try {
+        const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
+        const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=25`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`USDA API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Transform the response to include brand info for branded foods
+        const foods = data.foods?.map(food => {
+            const result = {
+                fdcId: food.fdcId,
+                description: food.description,
+                dataType: food.dataType
+            };
+
+            // Add brand info if it's a branded food
+            if (food.dataType === 'Branded') {
+                result.brandOwner = food.brandOwner;
+                result.brandName = food.brandName;
+            }
+
+            return result;
+        }) || [];
+
+        res.json({
+            success: true,
+            foods: foods
+        });
+    } catch (error) {
+        console.error('Error searching foods:', error);
+        res.status(500).json({ 
+            error: 'Failed to search foods',
+            details: error.message 
+        });
+    }
+});
+
+// Add food entry for user
+app.post('/api/addfood', async (req, res) => {
+    const { userId, fdcId, servingAmount, mealType, date } = req.body;
+
+    // Validate required fields
+    if (!userId || !fdcId || !servingAmount || !mealType) {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+            required: ['userId', 'fdcId', 'servingAmount', 'mealType']
+        });
+    }
+
+    try {
+        // First get the food details from USDA
+        const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
+        const url = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${apiKey}&nutrients=203,204,205,208`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`USDA API error: ${response.status}`);
+        }
+        
+        const foodData = await response.json();
+
+        // Get portion info
+        const portion = foodData.foodPortions?.[0] || { gramWeight: 100, measureUnit: { name: 'serving' } };
+
+        // Calculate conversion factor from 100g to total amount (per serving * number of servings)
+        const conversionFactor = (portion.gramWeight / 100) * servingAmount;
+
+        // Extract nutrients (USDA API returns values per 100g, we convert to total amount)
+        const nutrients = {};
+        foodData.foodNutrients?.forEach(nutrient => {
+            switch (nutrient.nutrient?.id) {
+                case 1008: // Energy
+                    nutrients.calories = nutrient.amount * conversionFactor;
+                    break;
+                case 1003: // Protein
+                    nutrients.protein = nutrient.amount * conversionFactor;
+                    break;
+                case 1004: // Total lipid (fat)
+                    nutrients.fat = nutrient.amount * conversionFactor;
+                    break;
+                case 1005: // Carbohydrate
+                    nutrients.carbohydrates = nutrient.amount * conversionFactor;
+                    break;
+            }
+        });
+
+        // Create the food entry
+        const foodEntry = new FoodEntry({
+            userId,
+            fdcId,
+            description: foodData.description,
+            dataType: foodData.dataType,
+            // Add brand info if it's a branded food
+            ...(foodData.dataType === 'Branded' && {
+                brandOwner: foodData.brandOwner,
+                brandName: foodData.brandName
+            }),
+            servingAmount,
+            servingUnit: portion.measureUnit?.name || 'serving',
+            gramWeight: portion.gramWeight,
+            nutrients,
+            mealType,
+            date: date ? new Date(date) : new Date()
+        });
+
+        // Save the food entry
+        const savedFoodEntry = await foodEntry.save();
+
+        // Find or create the meal for this entry
+        const entryDate = foodEntry.date;
+        entryDate.setHours(0, 0, 0, 0); // Set to start of day
+        const nextDay = new Date(entryDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        let meal = await Meal.findOne({
+            user: userId,
+            date: {
+                $gte: entryDate,
+                $lt: nextDay
+            },
+            mealTime: mealType
+        });
+
+        if (!meal) {
+            // Create new meal if it doesn't exist
+            meal = new Meal({
+                user: userId,
+                date: entryDate,
+                mealTime: mealType,
+                foods: [savedFoodEntry._id]
+            });
+        } else {
+            // Add food entry to existing meal
+            meal.foods.push(savedFoodEntry._id);
+        }
+
+        await meal.save();
+
+        res.json({
+            success: true,
+            message: 'Food entry added successfully',
+            entry: savedFoodEntry,
+            meal: meal
+        });
+        console.log('Food entry added successfully:', savedFoodEntry);
+
+    } catch (error) {
+        console.error('Error adding food entry:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to add food entry',
+            details: error.message
+        });
     }
 });
 
