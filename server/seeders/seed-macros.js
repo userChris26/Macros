@@ -3,11 +3,11 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const faker = require('faker');
 
-const User = require('./models/user');
-const Food = require('./models/Food');
-const Meal = require('./models/Meal');
-const Post = require('./models/Post');
-const Network = require('./models/Network');
+const User = require('../models/user');
+const Food = require('../models/Food');
+const Meal = require('../models/Meal');
+const Post = require('../models/Post');
+const Network = require('../models/Network');
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
