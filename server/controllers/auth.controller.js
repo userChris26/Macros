@@ -97,7 +97,7 @@ exports.login = async (req, res) =>
 			if (!result.isVerified) {
 				ret = { error: "Please verify your email before logging in", needsVerification: true };
 			} else {
-				const token = require("./createJWT.js");
+				const token = require("../scripts/createJWT.js");
 				const tokenData = token.createToken(result);
 
 				if (tokenData.error) {
@@ -113,8 +113,6 @@ exports.login = async (req, res) =>
 	} catch(e) {
 		ret = { error: e.message };
 	}
-
-	
 
 	res.status(200).json(ret);
 }
