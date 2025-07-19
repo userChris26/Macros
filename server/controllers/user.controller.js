@@ -1,3 +1,5 @@
+const { cloudinary } = require('../config/cloudinary.js');
+const emailConfig = require('../config/email.js');
 const User = require('../models/User.js');
 const Meal = require('../models/Meal.js');
 const Network = require('../models/Network.js');
