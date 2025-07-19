@@ -39,6 +39,7 @@ Macros is a social nutrition tracking platform that helps users monitor their ma
 - **Tailwind CSS**: Utility-first styling
 - **Lucide Icons**: Modern icon set
 - **React Query**: Data fetching and caching (coming soon)
+- **Flutter**: Mobile app development
 
 ### Backend
 - **Node.js**: Runtime environment
@@ -49,8 +50,8 @@ Macros is a social nutrition tracking platform that helps users monitor their ma
 
 ### External APIs
 - **USDA API**: Comprehensive food database
-- **Cloudinary API**: Image management (coming soon)
-- **SendGrid**: Email verification (planned)
+- **Cloudinary API**: Image management
+- **SendGrid**: Email verification and recovery
 
 ## 🚀 Getting Started
 
@@ -76,15 +77,14 @@ Create `.env` files in both `server` and `client` directories:
 
 ### Backend (.env)
 ```env
-PORT=5000
+FRONTEND_URL=your_url
 MONGODB_URI=your_mongodb_connection_string
 ACCESS_TOKEN_SECRET=your_jwt_secret
 USDA_API_KEY=your_usda_api_key
-# Coming soon:
-# CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-# CLOUDINARY_API_KEY=your_cloudinary_api_key
-# CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-# SENDGRID_API_KEY=your_sendgrid_key
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+SENDGRID_API_KEY=your_sendgrid_key
 ```
 
 4. Start the development servers
