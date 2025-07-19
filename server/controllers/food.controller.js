@@ -1,3 +1,4 @@
+const searchUSDA = require('../scripts/searchUSDA.js');
 const FoodEntry = require('../models/FoodEntry.js');
 
 exports.getFoodEntries =  async (req, res) => 
@@ -339,7 +340,7 @@ exports.testUSDA = async (req, res) =>
 {
     try {
         console.log('Testing USDA API...');
-        const foods = await searchUSDAFood('apple');
+        const foods = await searchUSDA.searchUSDAFood('apple');
         res.json({ 
             success: true, 
             count: foods.length, 

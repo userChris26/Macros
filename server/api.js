@@ -5,6 +5,7 @@ const express = require('express');
 const sgMail = require('@sendgrid/mail');
 const { cloudinary } = require('./config/cloudinary');
 const emailConfig = require('./config/email');
+const searchUSDA = require('./scripts/searchUSDA.js');
 const FoodEntry = require('./models/FoodEntry');
 const User = require('./models/User.js');
 const Meal = require('./models/Meal');
@@ -31,6 +32,8 @@ const NetworkSchema = new mongoose.Schema({
 // Create models
 const Network = mongoose.model('Network', NetworkSchema);
 const Food = mongoose.model('Food', UserSchema);
+
+
 
 exports.setApp = function( app, client )
 {
@@ -573,7 +576,7 @@ exports.setApp = function( app, client )
     app.get('/api/test-usda', async (req, res) => {
         try {
             console.log('Testing USDA API...');
-            const foods = await searchUSDAFood('apple');
+            const foods = await searchUSDA.searchUSDAFood('apple');
             res.json({ 
                 success: true, 
                 count: foods.length, 
