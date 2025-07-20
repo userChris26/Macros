@@ -1,13 +1,10 @@
 const User = require('../models/User.js');
-const sgMail = require('@sendgrid/mail');
 const blake2 = require('blake2');
-
-// const User = require('../models/User');
-// const sgMail = require('@sendgrid/mail');
+const authEmails = require('../scripts/authEmails.js');
 
 exports.register = async (req, res) =>
 {
-	// incoming: email, password, firstName, lastName
+	// incoming: userEmail, userPassword, userFirstName, userLastName
 	// outgoing: error
 
 	const { userEmail, userPassword, userFirstName, userLastName } = req.body;
@@ -16,56 +13,48 @@ exports.register = async (req, res) =>
 	try
 	{
 		const result = await User.findOne({ email: userEmail });
+		
 		if (result)
 		{
-			ret = { error: "Account Already Exists" };
+			return res.status(200).json({ error: "Account Already Exists" });
 		}
-		else
-		{
-			// Hash the password
-			var hash = blake2.createHash('blake2b');
-			hash.update(Buffer.from(userPassword));
 
-			const newUser = new User(
-			{ 
-				email: userEmail,
-				password: hash.digest('hex'),
-				firstName: userFirstName,
-				lastName: userLastName,
-				isVerified: false
-			});
-			await newUser.save();
+		// Hash the password
+		var hash = blake2.createHash('blake2b');
+		hash.update(Buffer.from(userPassword));
 
-			// Generate verification token and send email
-			const verifyToken = require('crypto').randomBytes(32).toString('hex');
-			const verifyTokenExpiry = new Date(Date.now() + 3600000); // 1 hour expiry
+		// Generate account verification token
+		const verifyToken = require('crypto').randomBytes(32).toString('hex');
+		const verifyTokenExpiry = new Date(Date.now() + 3600000); // 1 hour expiry
 
-			// Save verification token to user
-			await User.findByIdAndUpdate(
-				newUser._id,
-				{
-					verifyToken,
-					verifyTokenExpiry
-				}
-			);
+		const newUser = new User(
+		{ 
+			email: userEmail,
+			password: hash.digest('hex'),
+			firstName: userFirstName,
+			lastName: userLastName,
+			isVerified: false,
+			verifyToken,
+			verifyTokenExpiry
+		});
+		await newUser.save();
 
-			// Send verification email
-			const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
-			const msg = {
-				to: userEmail,
-				from: emailConfig.senderEmail,
-				subject: emailConfig.templates.emailVerify.subject,
-				text: emailConfig.templates.emailVerify.generateText(verifyUrl),
-				html: emailConfig.templates.emailVerify.generateHtml(verifyUrl)
-			};
-
-			try {
-				await sgMail.send(msg);
-				ret = { error: '', verificationEmailSent: true };
-			} catch (emailError) {
-				console.error('Failed to send verification email:', emailError);
-				ret = { error: 'Account created but failed to send verification email. Please contact support.' };
+		/*
+		// Save verification token to user
+		await User.findByIdAndUpdate(
+			newUser._id,
+			{
+				verifyToken,
+				verifyTokenExpiry
 			}
+		);
+		*/
+
+		// Send verification email
+		ret = authEmails.sendVerifyEmail(verifyToken);
+		if (ret && ret.error !== '')
+		{
+			throw new sendGridError;
 		}
 	}
 	catch(e)
@@ -79,7 +68,7 @@ exports.register = async (req, res) =>
 
 exports.login = async (req, res) =>
 {
-	// incoming: email, password
+	// incoming: userEmail, userPassword
 	// outgoing: accessToken, error
 
 	const { userEmail, userPassword } = req.body;
@@ -90,27 +79,35 @@ exports.login = async (req, res) =>
 	hash.update(Buffer.from(userPassword));
 
 	const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
-	try {
-		if (!result) {
-			ret = { error: "Login/Password incorrect" };
-		} else {
-			if (!result.isVerified) {
-				ret = { error: "Please verify your email before logging in", needsVerification: true };
-			} else {
-				const token = require("../scripts/createJWT.js");
-				const tokenData = token.createToken(result);
-
-				if (tokenData.error) {
-					ret = { error: tokenData.error };
-				} else {
-					ret = {
-						accessToken: tokenData.accessToken,
-						error: ''
-					};
-				}
-			}
+	try
+	{
+		if (!result)
+		{
+			return res.status(200).json({ error: "Login/Password incorrect" });
 		}
-	} catch(e) {
+
+		if (!result.isVerified)
+		{
+			return res.status(200).json({ 
+				error: "Please verify your email before logging in", 
+				needsVerification: true
+			});
+		}
+
+		const token = require("../scripts/createJWT.js");
+		const tokenData = token.createToken(result);
+
+		if (tokenData.error)
+		{
+			ret = { error: tokenData.error };
+		}
+		else
+		{
+			ret = { accessToken: tokenData.accessToken, error: '' };
+		}
+	}
+	catch(e)
+	{
 		ret = { error: e.message };
 	}
 
@@ -118,7 +115,7 @@ exports.login = async (req, res) =>
 }
 
 // Password Reset Endpoints
-exports.sendEmailRecovery = async (req, res) =>
+exports.sendRecoveryEmail = async (req, res) =>
 {
 	try {
 		const { email } = req.body;
@@ -127,8 +124,9 @@ exports.sendEmailRecovery = async (req, res) =>
 		const user = await User.findOne({ email });
 
 		// Don't reveal if user exists or not
-		if (!user) {
-			return res.json({ error: '' }); // Success response even if user not found
+		if (!user)
+		{
+			return res.status(200).json({ error: '' }); // Success response even if user not found
 		}
 
 		// Generate reset token (valid for 1 hour)
@@ -157,29 +155,14 @@ exports.sendEmailRecovery = async (req, res) =>
 		});
 
 		// Send email using SendGrid
-		const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${resetToken}`;
-
-		const msg = {
-			to: email,
-			from: emailConfig.senderEmail,
-			subject: emailConfig.templates.passwordReset.subject,
-			text: emailConfig.templates.passwordReset.generateText(resetUrl),
-			html: emailConfig.templates.passwordReset.generateHtml(resetUrl)
-		};
-
-		try {
-			await sgMail.send(msg);
-			console.log('SendGrid email sent successfully');
-			res.json({ error: '' });
-		} catch (sendGridError) {
-			console.error('SendGrid error:', {
-				code: sendGridError.code,
-				message: sendGridError.message,
-				response: sendGridError.response?.body
-			});
-			throw sendGridError;
+		const ret = authEmails.sendRecoveryEmail(resetToken);
+		if (ret && ret.error !== '')
+		{
+			throw new sendGridError;
 		}
-	} catch (err) {
+	}
+	catch (err)
+	{
 		console.error('Password reset error:', err);
 		res.status(500).json({ 
 			error: 'Failed to process password reset',
@@ -202,60 +185,50 @@ exports.recoverEmail = async (req, res) =>
 		
 		// Find user with valid reset token
 		const user = await User.findOne({
-		resetToken: token,
-		resetTokenExpiry: { $gt: Date.now() }
+			resetToken: token,
+			resetTokenExpiry: { $gt: Date.now() }
 		});
 
-		if (!user) {
+		if (!user)
+		{
 			// Debug why the token is invalid
 			const userWithToken = await User.findOne({ resetToken: token });
-			if (userWithToken) {
-				console.log('Token found but expired. Token expiry:', userWithToken.resetTokenExpiry, 'Current time:', Date.now());
-			} else {
+
+			if (userWithToken)
+			{
+				console.log('Token found but expired. Token expiry:', 
+					userWithToken.resetTokenExpiry, 
+					'Current time:', Date.now());
+			}
+			else
+			{
 				console.log('No user found with token');
 			}
 			return res.status(400).json({ error: 'Invalid or expired reset token' });
 		}
-
 		console.log('Found user for password reset:', user.email);
 
 		// Update password and clear reset token
 		await User.findByIdAndUpdate(user._id, {
-		password: hash.digest('hex'),
-		resetToken: null,
-		resetTokenExpiry: null
+			password: hash.digest('hex'),
+			resetToken: null,
+			resetTokenExpiry: null
 		});
 
 		// Send confirmation email
-		const msg = {
-		to: user.email,
-		from: emailConfig.senderEmail,
-		subject: 'Your password has been reset',
-		text: 'Your password for Macros has been successfully reset.',
-		html: `
-			<h1>Password Reset Successful</h1>
-			<p>Your password for Macros has been successfully reset.</p>
-			<p>If you did not make this change, please contact support immediately.</p>
-		`
-		};
+		authEmails.sendRecoveredConfirmationEmail();
 
-		try {
-		await sgMail.send(msg);
-			console.log('Password reset confirmation email sent successfully');
-		} catch (emailError) {
-			console.error('Failed to send confirmation email:', emailError);
-			// Don't return error to client - password was still reset successfully
-		}
-
-		res.json({ error: '' });
-	} catch (err) {
+		res.status(200).json({ error: '' });
+	}
+	catch (err)
+	{
 		console.error('Password reset error:', err);
 		res.status(500).json({ error: 'Failed to reset password' });
 	}
 }
 
 // Email Verification Endpoints
-exports.sendEmailVerification = async (req, res) =>
+exports.sendVerificationEmail = async (req, res) =>
 {
 	try {
 		const { email } = req.body;
@@ -264,8 +237,9 @@ exports.sendEmailVerification = async (req, res) =>
 		const user = await User.findOne({ email });
 		
 		// Don't reveal if user exists or not
-		if (!user) {
-			return res.json({ error: '' }); // Success response even if user not found
+		if (!user)
+		{
+			return res.status(200).json({ error: '' }); // Success response even if user not found
 		}
 
 		// Generate reset token (valid for 1 hour)
@@ -293,30 +267,14 @@ exports.sendEmailVerification = async (req, res) =>
 			expiry: updatedUser.verifyTokenExpiry.toISOString()
 		});
 
-		// Send email using SendGrid
-		const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
-		
-		const msg = {
-			to: email,
-			from: emailConfig.senderEmail,
-			subject: emailConfig.templates.emailVerify.subject,
-			text: emailConfig.templates.emailVerify.generateText(verifyUrl),
-			html: emailConfig.templates.emailVerify.generateHtml(verifyUrl)
-		};
-
-		try {
-			await sgMail.send(msg);
-			console.log('SendGrid email sent successfully');
-			res.json({ error: '' });
-		} catch (sendGridError) {
-			console.error('SendGrid error:', {
-				code: sendGridError.code,
-				message: sendGridError.message,
-				response: sendGridError.response?.body
-			});
-			throw sendGridError;
+		const ret = authEmails.sendVerifyEmail(token);
+		if (ret && ret.error !== '')
+		{
+			throw new sendGridError;
 		}
-	} catch (err) {
+	}
+	catch (err)
+	{
 		console.error('Email verification error:', err);
 		res.status(500).json({ 
 		error: 'Failed to process email verification',
@@ -339,17 +297,20 @@ exports.verifyEmail = async (req, res) =>
 			verifyTokenExpiry: { $gt: Date.now() }
 		});
 
-		if (!user) {
+		if (!user)
+		{
 			// Debug why the token is invalid
 			const userWithToken = await User.findOne({ verifyToken: token });
-			if (userWithToken) {
+			if (userWithToken)
+			{
 				console.log('Token found but expired. Token expiry:', userWithToken.verifyTokenExpiry, 'Current time:', Date.now());
-			} else {
+			}
+			else
+			{
 				console.log('No user found with token');
 			}
 			return res.status(400).json({ error: 'Invalid or expired reset token' });
 		}
-
 		console.log('Found user for email verification:', user.email);
 
 		// Update password and clear reset token
@@ -360,28 +321,12 @@ exports.verifyEmail = async (req, res) =>
 		});
 
 		// Send confirmation email
-		const msg = {
-			to: user.email,
-			from: emailConfig.senderEmail,
-			subject: 'Your email has been verified',
-			text: 'Your email for Macros has been successfully verified.',
-			html: `
-				<h1>Email Verification Successful</h1>
-				<p>Your email for Macros has been successfully verified.</p>
-				<p>If you did not make this change, please contact support immediately.</p>
-			`
-		};
+		authEmails.sendVerifiedConfirmationEmail();
 
-		try {
-			await sgMail.send(msg);
-			console.log('Email verification confirmation email sent successfully');
-		} catch (emailError) {
-			console.error('Failed to send confirmation email:', emailError);
-			// Don't return error to client - email was still verified successfully
-		}
-
-		res.json({ error: '' });
-	} catch (err) {
+		res.status(200).json({ error: '' });
+	}
+	catch (err)
+	{
 		console.error('Email verification error:', err);
 		res.status(500).json({ error: 'Failed to verify email' });
 	}

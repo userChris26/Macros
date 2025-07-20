@@ -1,5 +1,5 @@
 require('dotenv').config();
-exports.searchUSDAFood = async (query)
+exports.searchUSDAFood = async function (query)
 {
   const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
   console.log('Searching USDA API for:', query);

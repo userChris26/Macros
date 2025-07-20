@@ -1,11 +1,10 @@
 const { cloudinary } = require('../config/cloudinary.js');
-const emailConfig = require('../config/email.js');
 const User = require('../models/User.js');
 const Meal = require('../models/Meal.js');
 const Network = require('../models/Network.js');
 const FoodEntry = require('../models/FoodEntry.js');
 
-exports.searchUser = async (req, res) =>
+exports.searchUser = async (req, res, next) =>
 {
     try {
         const { q } = req.query;
@@ -39,9 +38,11 @@ exports.searchUser = async (req, res) =>
         console.error('User search error:', err);
         res.status(500).json({ error: 'Failed to search users' });
     }
+
+    next();
 }
 
-exports.uploadProfilePic = async (req, res) =>
+exports.uploadProfilePic = async (req, res, next) =>
 {
     try {
         const { userId } = req.params;
@@ -87,6 +88,8 @@ exports.uploadProfilePic = async (req, res) =>
         console.error('Upload error:', err);
         res.status(500).json({ error: 'Failed to upload profile picture' });
     }
+
+    next();
 }
 
 // Delete profile picture
@@ -128,6 +131,8 @@ exports.deleteProfilePic =  async (req, res) =>
         console.error('Delete error:', err);
         res.status(500).json({ error: 'Failed to delete profile picture' });
     }
+
+    next();
 }
 
 // Get user profile (including profile picture)
@@ -155,6 +160,8 @@ exports.getUser = async (req, res) =>
         console.error(err);
         res.status(500).json({ error: 'Could not fetch user profile' });
     }
+
+    next();
 }
 
 // Update user profile
@@ -190,6 +197,8 @@ exports.updateUser = async (req, res) =>
         console.error(err);
         res.status(500).json({ error: 'Could not update profile' });
     }
+
+    next();
 }
 
 exports.deleteUser = async (req, res) =>
@@ -222,4 +231,6 @@ exports.deleteUser = async (req, res) =>
         console.error('Delete user error:', err);
         res.status(500).json({ error: 'Failed to delete user' });
     }
+
+    next();
 }

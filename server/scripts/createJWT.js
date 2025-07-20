@@ -7,7 +7,7 @@ exports.createToken = function (user) {
 
 _createToken = function (user) {
     try {
-        console.log('JWT_SECRET in createJWT.js:', process.env.JWT_SECRET);
+        // console.log('JWT_SECRET in createJWT.js:', process.env.JWT_SECRET);
         const payload = {
             userId: user._id,
             firstName: user.firstName,
@@ -18,6 +18,8 @@ _createToken = function (user) {
         };
 
         const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        console.log(accessToken);
         return { accessToken };
     }
     catch(e) {
@@ -25,28 +27,28 @@ _createToken = function (user) {
     }
 }
 
-exports.isExpired = function(token) {
-    var isError = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,
-        (err, verifiedJwt) => {
-            if(err) {
-                return true;
-            }
-            else {
-                return false;
-            }
-        });
+// exports.isExpired = function(token) {
+//     var isError = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,
+//         (err, verifiedJwt) => {
+//             if(err) {
+//                 return true;
+//             }
+//             else {
+//                 return false;
+//             }
+//         });
 
-    return isError;
-}
+//     return isError;
+// }
 
-exports.refresh = function(token) {
-    var ud = jwt.decode(token, { complete: true });
-    return _createToken({
-        _id: ud.payload.userId,
-        firstName: ud.payload.firstName,
-        lastName: ud.payload.lastName,
-        email: ud.payload.email,
-        profilePic: ud.payload.profilePic,
-        bio: ud.payload.bio
-    });
-}
+// exports.refresh = function(token) {
+//     var userData = jwt.decode(token, { complete: true });
+//     return _createToken({
+//         _id: userData.payload.userId,
+//         firstName: userData.payload.firstName,
+//         lastName: userData.payload.lastName,
+//         email: userData.payload.email,
+//         profilePic: userData.payload.profilePic,
+//         bio: userData.payload.bio
+//     });
+// }

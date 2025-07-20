@@ -154,6 +154,7 @@ exports.setApp = function( app, client )
 		res.status(200).json(ret);
 	});
 
+    /*
 	app.post('/api/test-jwt', async (req, res) =>
 	{
 		// incoming: userJwt
@@ -196,7 +197,7 @@ exports.setApp = function( app, client )
 		var ret = { error: error, userJwt: refreshedToken };
 		res.status(200).json(ret);
 	});
-    
+    */
     
 	// ─── Social Network Endpoints
 	// Search users
