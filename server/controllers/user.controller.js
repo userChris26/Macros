@@ -93,7 +93,7 @@ exports.uploadProfilePic = async (req, res, next) =>
 }
 
 // Delete profile picture
-exports.deleteProfilePic =  async (req, res) =>
+exports.deleteProfilePic =  async (req, res, next) =>
 {
     try {
         const { userId } = req.params;
@@ -136,7 +136,7 @@ exports.deleteProfilePic =  async (req, res) =>
 }
 
 // Get user profile (including profile picture)
-exports.getUser = async (req, res) => 
+exports.getUser = async (req, res, next) => 
 {
     try {
         const user = await User.findById(req.params.userId).select('-password');
@@ -165,11 +165,11 @@ exports.getUser = async (req, res) =>
 }
 
 // Update user profile
-exports.updateUser = async (req, res) => 
+exports.updateUser = async (req, res, next) => 
 {
     try {
         const { userId } = req.params;
-        const { firstName, lastName, bio, userJwt } = req.body;
+        const { firstName, lastName, bio } = req.body;
 
         const updatedUser = await User.findByIdAndUpdate(
             userId,
@@ -201,7 +201,7 @@ exports.updateUser = async (req, res) =>
     next();
 }
 
-exports.deleteUser = async (req, res) =>
+exports.deleteUser = async (req, res, next) =>
 {
     try {
         const { userId } = req.params;

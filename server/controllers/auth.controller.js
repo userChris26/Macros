@@ -8,7 +8,18 @@ exports.register = async (req, res) =>
 	// outgoing: error
 
 	const { userEmail, userPassword, userFirstName, userLastName } = req.body;
-	var ret;
+
+	// Validate required fields
+    if (!userEmail || !userPassword || !userFirstName || !userLastName)
+    {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+            required: ['userEmail', 'userPassword', 'userFirstName', 'userLastName']
+        });
+    }
+
+	let ret;
 	
 	try
 	{
@@ -20,7 +31,7 @@ exports.register = async (req, res) =>
 		}
 
 		// Hash the password
-		var hash = blake2.createHash('blake2b');
+		let hash = blake2.createHash('blake2b');
 		hash.update(Buffer.from(userPassword));
 
 		// Generate account verification token
@@ -72,10 +83,21 @@ exports.login = async (req, res) =>
 	// outgoing: accessToken, error
 
 	const { userEmail, userPassword } = req.body;
-	var ret;
+	
+	// Validate required fields
+    if (!userEmail || !userPassword)
+    {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+            required: ['userEmail', 'userPassword']
+        });
+    }
+
+	let ret;
 
 	// Hash the password
-	var hash = blake2.createHash('blake2b');
+	let hash = blake2.createHash('blake2b');
 	hash.update(Buffer.from(userPassword));
 
 	const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
@@ -117,8 +139,18 @@ exports.login = async (req, res) =>
 // Password Reset Endpoints
 exports.sendRecoveryEmail = async (req, res) =>
 {
+	const { email } = req.body;
+
+	// Validate required fields
+    if (!email)
+    {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+            required: ['email']
+        });
+    }
 	try {
-		const { email } = req.body;
 
 		// Find user by email
 		const user = await User.findOne({ email });
@@ -174,11 +206,22 @@ exports.sendRecoveryEmail = async (req, res) =>
 // Reset Password with Token
 exports.recoverEmail = async (req, res) =>
 {
+	const { token, newPassword } = req.body;
+
+	// Validate required fields
+    if (!token || !newPassword)
+    {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+            required: ['token', 'newPassword']
+        });
+    }
+
 	try {
-		const { token, newPassword } = req.body;
 		
 		// Hash the password
-		var hash = blake2.createHash('blake2b');
+		let hash = blake2.createHash('blake2b');
 		hash.update(Buffer.from(newPassword));
 		
 		console.log('Reset password attempt with token:', token);
@@ -230,8 +273,19 @@ exports.recoverEmail = async (req, res) =>
 // Email Verification Endpoints
 exports.sendVerificationEmail = async (req, res) =>
 {
+	const { email } = req.body;
+
+	// Validate required fields
+    if (!email)
+    {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+            required: ['email']
+        });
+    }
+
 	try {
-		const { email } = req.body;
 		
 		// Find user by email
 		const user = await User.findOne({ email });
@@ -286,8 +340,19 @@ exports.sendVerificationEmail = async (req, res) =>
 // Verify Email with Token
 exports.verifyEmail = async (req, res) =>
 {
+	const { token } = req.body;
+
+	// Validate required fields
+    if (!token)
+    {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing required fields',
+            required: ['token']
+        });
+    }
+
 	try {
-		const { token } = req.body;
 		
 		console.log('Verify email attempt with token:', token);
 		

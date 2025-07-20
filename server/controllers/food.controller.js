@@ -1,5 +1,6 @@
 const searchUSDA = require('../scripts/searchUSDA.js');
 const FoodEntry = require('../models/FoodEntry.js');
+const Meal = require('../models/Meal.js');
 
 exports.getFoodEntries =  async (req, res) => 
 {
@@ -8,15 +9,18 @@ exports.getFoodEntries =  async (req, res) =>
     
     console.log('Get food entries request:', { userId, date });
     
-    if (!userId) {
+    if (!userId)
+    {
         return res.status(400).json({ error: 'User ID is required' });
     }
 
-    try {
+    try
+    {
         const query = { userId: userId };  // No need to parseInt since we store it as string
         
         // If date is provided, filter by date
-        if (date) {
+        if (date)
+        {
             query.dateAdded = date;
         }
         
@@ -64,7 +68,9 @@ exports.getFoodEntries =  async (req, res) =>
             foodEntries: entriesWithPhotos,
             totalCalories: totalCalories.toFixed(1)
         });
-    } catch (error) {
+    }
+    catch (error)
+    {
         console.error('Get food entries error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -106,12 +112,14 @@ exports.getFoodDetails = async (req, res) =>
 {
     const { fdcId } = req.params;
     
-    try {
+    try
+    {
         const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
         const url = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${apiKey}&nutrients=203,204,205,208`;
         const response = await fetch(url);
         
-        if (!response.ok) {
+        if (!response.ok)
+        {
             throw new Error(`USDA API error: ${response.status}`);
         }
         
@@ -124,7 +132,8 @@ exports.getFoodDetails = async (req, res) =>
         // Extract the nutrients we want
         const nutrients = {};
         data.foodNutrients?.forEach(nutrient => {
-            switch (nutrient.nutrient?.id) {
+            switch (nutrient.nutrient?.id)
+            {
                 case 1008: // Energy
                     nutrients.calories = nutrient.amount / servingsPerHundredGrams;
                     break;
@@ -158,7 +167,9 @@ exports.getFoodDetails = async (req, res) =>
             success: true,
             food: result
         });
-    } catch (error) {
+    }
+    catch (error)
+    {
         console.error('Error fetching food details:', error);
         res.status(500).json({ 
             error: 'Failed to fetch food details',
@@ -171,16 +182,19 @@ exports.searchFood = async (req, res) =>
 {
     const { query } = req.query;
     
-    if (!query) {
+    if (!query)
+    {
         return res.status(400).json({ error: 'Search query is required' });
     }
 
-    try {
+    try
+    {
         const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
         const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(query)}&pageSize=25`;
         const response = await fetch(url);
         
-        if (!response.ok) {
+        if (!response.ok)
+        {
             throw new Error(`USDA API error: ${response.status}`);
         }
         
@@ -195,7 +209,8 @@ exports.searchFood = async (req, res) =>
             };
 
             // Add brand info if it's a branded food
-            if (food.dataType === 'Branded') {
+            if (food.dataType === 'Branded')
+            {
                 result.brandOwner = food.brandOwner;
                 result.brandName = food.brandName;
             }
@@ -207,7 +222,9 @@ exports.searchFood = async (req, res) =>
             success: true,
             foods: foods
         });
-    } catch (error) {
+    }
+    catch (error)
+    {
         console.error('Error searching foods:', error);
         res.status(500).json({ 
             error: 'Failed to search foods',
@@ -221,7 +238,8 @@ exports.addFood = async (req, res) =>
     const { userId, fdcId, servingAmount, mealType, date } = req.body;
 
     // Validate required fields
-    if (!userId || !fdcId || !servingAmount || !mealType) {
+    if (!userId || !fdcId || !servingAmount || !mealType)
+    {
         return res.status(400).json({
             success: false,
             error: 'Missing required fields',
@@ -229,13 +247,15 @@ exports.addFood = async (req, res) =>
         });
     }
 
-    try {
+    try
+    {
         // First get the food details from USDA
         const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
         const url = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${apiKey}&nutrients=203,204,205,208`;
         const response = await fetch(url);
         
-        if (!response.ok) {
+        if (!response.ok)
+        {
             throw new Error(`USDA API error: ${response.status}`);
         }
         
@@ -303,7 +323,8 @@ exports.addFood = async (req, res) =>
             mealTime: mealType
         });
 
-        if (!meal) {
+        if (!meal)
+        {
             // Create new meal if it doesn't exist
             meal = new Meal({
                 user: userId,
@@ -311,7 +332,9 @@ exports.addFood = async (req, res) =>
                 mealTime: mealType,
                 foods: [savedFoodEntry._id]
             });
-        } else {
+        }
+        else
+        {
             // Add food entry to existing meal
             meal.foods.push(savedFoodEntry._id);
         }
@@ -326,7 +349,9 @@ exports.addFood = async (req, res) =>
         });
         console.log('Food entry added successfully:', savedFoodEntry);
 
-    } catch (error) {
+    }
+    catch (error)
+    {
         console.error('Error adding food entry:', error);
         res.status(500).json({
             success: false,
@@ -338,7 +363,8 @@ exports.addFood = async (req, res) =>
 
 exports.testUSDA = async (req, res) => 
 {
-    try {
+    try
+    {
         console.log('Testing USDA API...');
         const foods = await searchUSDA.searchUSDAFood('apple');
         res.json({ 
@@ -347,7 +373,9 @@ exports.testUSDA = async (req, res) =>
             foods: foods.slice(0, 3),
             message: 'USDA API is working!'
         });
-    } catch (error) {
+    }
+    catch (error)
+    {
         console.error('USDA API test failed:', error);
         res.json({ 
             success: false, 

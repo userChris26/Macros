@@ -2,7 +2,7 @@ const Network = require('../models/Network.js');
 const FoodEntry = require('../models/FoodEntry.js');
 
 // Follow a user
-exports.followUser = async (req, res) => 
+exports.followUser = async (req, res, next) => 
 {    
     try
     { 
@@ -28,10 +28,12 @@ exports.followUser = async (req, res) =>
         console.error(err);
         res.status(500).json({ error: 'Could not follow user' });
     }
+
+    next();
 }
 
 // Unfollow a user
-exports.unfollowUser = async (req, res) =>
+exports.unfollowUser = async (req, res, next) =>
 {
     try
     {
@@ -58,10 +60,12 @@ exports.unfollowUser = async (req, res) =>
         console.error(err);
         res.status(500).json({ error: 'Could not unfollow user' });
     }
+
+    next();
 }
 
 // Get followers for a user
-exports.getFollowers = async (req, res) =>
+exports.getFollowers = async (req, res, next) =>
 {
     try
     {
@@ -75,10 +79,12 @@ exports.getFollowers = async (req, res) =>
         console.error(err);
         res.status(500).json({ error: 'Could not fetch followers' });
     }
+
+    next();
 }
 
 // Get users being followed by a user
-exports.getFollowing = async (req, res) => 
+exports.getFollowing = async (req, res, next) => 
 {
     try
     {
@@ -92,10 +98,12 @@ exports.getFollowing = async (req, res) =>
         console.error(err);
         res.status(500).json({ error: 'Could not fetch following' });
     }
+
+    next();
 }
 
  // Get dashboard stats
-exports.getDashboardStats = async (req, res) =>
+exports.getDashboardStats = async (req, res, next) =>
 {
     try
     {
@@ -132,4 +140,6 @@ exports.getDashboardStats = async (req, res) =>
         console.error('Error fetching dashboard stats:', err);
         res.status(500).json({ error: 'Failed to fetch dashboard stats' });
     }
+
+    next();
 }
