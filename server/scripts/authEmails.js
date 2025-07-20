@@ -1,7 +1,7 @@
 const sgMail = require('@sendgrid/mail');
 const emailConfig = require('../config/email');
 
-exports.sendVerifyEmail = async function(token)
+exports.sendVerifyEmail = async function(verifyToken)
 {
     const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
     let ret;
@@ -30,10 +30,11 @@ exports.sendVerifyEmail = async function(token)
         // throw sendGridError;
         ret = { error: 'Failed to send verification email. Please contact support.' };
     }
+
     return ret;
 }
 
-exports.sendRecoveryEmail = async function(token)
+exports.sendRecoveryEmail = async function(resetToken)
 {
     const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${resetToken}`;
     let ret;
@@ -50,7 +51,6 @@ exports.sendRecoveryEmail = async function(token)
     {
         await sgMail.send(msg);
         console.log('SendGrid email sent successfully');
-        // res.json({ error: '' });
         ret = {error:  ''};
     }
     catch (sendGridError)
@@ -63,6 +63,7 @@ exports.sendRecoveryEmail = async function(token)
         ret = { error: sendGridError };
         // throw sendGridError;
     }
+
     return ret;
 }
 
