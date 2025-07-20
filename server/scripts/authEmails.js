@@ -66,7 +66,7 @@ exports.sendRecoveryEmail = async function(token)
     return ret;
 }
 
-exports.sendVerifiedConfirmationEmail()
+exports.sendVerifiedConfirmationEmail = async function()
 {
     const msg = {
         to: user.email,
