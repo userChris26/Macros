@@ -23,5 +23,3 @@ module.exports = function (req, res, next)
         next();
     })
 }
-
-// invalid token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODdiZDJjMjNlZDUxMjgxMjg1Njk3ZjIiLCJmaXJzdE5hbWUiOiJKb25hcyIsImxhc3ROYW1lIjoiRGFsbGFzIiwiZW1haWwiOiJ5YWRhZzI5NTk0QGtpc3NneS5jb20iLCJwcm9maWxlUGljIjpudWxsLCJiaW8iOm51bGwsImlhdCI6MTc1Mjk3NTY3MiwiZXhwIjoxNzUyOTc5MjcyfQ.3ac7OqJBMG8tQGthYC8OZrfi-OokNnqKLHg16eolddw

@@ -26,29 +26,3 @@ _createToken = function (user) {
         return { error: e.message };
     }
 }
-
-// exports.isExpired = function(token) {
-//     var isError = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,
-//         (err, verifiedJwt) => {
-//             if(err) {
-//                 return true;
-//             }
-//             else {
-//                 return false;
-//             }
-//         });
-
-//     return isError;
-// }
-
-// exports.refresh = function(token) {
-//     var userData = jwt.decode(token, { complete: true });
-//     return _createToken({
-//         _id: userData.payload.userId,
-//         firstName: userData.payload.firstName,
-//         lastName: userData.payload.lastName,
-//         email: userData.payload.email,
-//         profilePic: userData.payload.profilePic,
-//         bio: userData.payload.bio
-//     });
-// }
