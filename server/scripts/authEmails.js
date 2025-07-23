@@ -1,13 +1,13 @@
 const sgMail = require('@sendgrid/mail');
 const emailConfig = require('../config/email');
 
-exports.sendVerifyEmail = async function(verifyToken)
+exports.sendVerifyEmail = async function(email, verifyToken)
 {
     const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
     let ret;
 
     const msg = {
-        to: userEmail,
+        to: email,
         from: emailConfig.senderEmail,
         subject: emailConfig.templates.emailVerify.subject,
         text: emailConfig.templates.emailVerify.generateText(verifyUrl),
@@ -34,7 +34,7 @@ exports.sendVerifyEmail = async function(verifyToken)
     return ret;
 }
 
-exports.sendRecoveryEmail = async function(resetToken)
+exports.sendRecoveryEmail = async function(email, resetToken)
 {
     const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${resetToken}`;
     let ret;
@@ -67,10 +67,10 @@ exports.sendRecoveryEmail = async function(resetToken)
     return ret;
 }
 
-exports.sendVerifiedConfirmationEmail = async function()
+exports.sendVerifiedConfirmationEmail = async function(email)
 {
     const msg = {
-        to: user.email,
+        to: email,
         from: emailConfig.senderEmail,
         subject: 'Your email has been verified',
         text: 'Your email for Macros has been successfully verified.',
@@ -93,10 +93,10 @@ exports.sendVerifiedConfirmationEmail = async function()
     }
 }
 
-exports.sendRecoveredConfirmationEmail = async function()
+exports.sendRecoveredConfirmationEmail = async function(email)
 {
     const msg = {
-        to: user.email,
+        to: email,
         from: emailConfig.senderEmail,
         subject: 'Your password has been reset',
         text: 'Your password for Macros has been successfully reset.',

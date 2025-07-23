@@ -62,7 +62,7 @@ exports.register = async (req, res) =>
 		*/
 
 		// Send verification email
-		ret = authEmails.sendVerifyEmail(verifyToken);
+		ret = authEmails.sendVerifyEmail(userEmail, verifyToken);
 		if (ret && ret.error !== '')
 		{
 			throw new sendGridError;
@@ -187,7 +187,7 @@ exports.sendRecoveryEmail = async (req, res) =>
 		});
 
 		// Send email using SendGrid
-		const ret = authEmails.sendRecoveryEmail(resetToken);
+		const ret = authEmails.sendRecoveryEmail(email, resetToken);
 		if (ret && ret.error !== '')
 		{
 			throw new sendGridError;
@@ -259,7 +259,7 @@ exports.recoverEmail = async (req, res) =>
 		});
 
 		// Send confirmation email
-		authEmails.sendRecoveredConfirmationEmail();
+		authEmails.sendRecoveredConfirmationEmail(user.email);
 
 		res.status(200).json({ error: '' });
 	}
@@ -321,7 +321,7 @@ exports.sendVerificationEmail = async (req, res) =>
 			expiry: updatedUser.verifyTokenExpiry.toISOString()
 		});
 
-		const ret = authEmails.sendVerifyEmail(token);
+		const ret = authEmails.sendVerifyEmail(email, token);
 		if (ret && ret.error !== '')
 		{
 			throw new sendGridError;
@@ -386,7 +386,7 @@ exports.verifyEmail = async (req, res) =>
 		});
 
 		// Send confirmation email
-		authEmails.sendVerifiedConfirmationEmail();
+		authEmails.sendVerifiedConfirmationEmail(user.email);
 
 		res.status(200).json({ error: '' });
 	}
