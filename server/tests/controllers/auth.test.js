@@ -5,22 +5,26 @@ const User = require('../../models/User.js');
 jest.mock('../../scripts/authEmails.js');
 jest.mock('../../models/User.js');
 
-test('/api/register: missing parameters', async () => {
+describe("/api/register", () => {
 
-    const request = {
-        userEmail: 'null',
-        userPassword: null,
-        userFirstName: null,
-        userLastName: null
-    }
+    
+    test('/api/register: missing parameters', async () => {
 
-    // // User.findOne.mockResolvedValue({ email: request.userEmail });
-    // // User.save.mockResolvedValue();
-    // jest.spyOn(User.prototype, 'findOne').mockReturnValueOnce({ email: request.userEmail });
-    // jest.spyOn(User.prototype, 'save').mockResolvedValue();
-    // authEmails.sendVerifyEmail.mockResolvedValue(request.userEmail, null);
+        const request = {
+            userEmail: 'null',
+            userPassword: null,
+            userFirstName: null,
+            userLastName: null
+        }
 
-    let response = await authController.register(request, request);
+        // // User.findOne.mockResolvedValue({ email: request.userEmail });
+        // // User.save.mockResolvedValue();
+        // jest.spyOn(User.prototype, 'findOne').mockReturnValueOnce({ email: request.userEmail });
+        // jest.spyOn(User.prototype, 'save').mockResolvedValue();
+        // authEmails.sendVerifyEmail.mockResolvedValue(request.userEmail, null);
 
-    expect().toThrow();
+        let response = await authController.register(request, request);
+
+        expect().toThrow();
+    })
 })

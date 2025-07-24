@@ -154,4 +154,36 @@ describe("Email recovery script", () => {
 });
 
 
-// TODO: Finalize the errors above and apply it to the rest of the script
+describe("Email recovery confirmation script", () => {
+    let mockResponse;
+
+    beforeEach(() => {
+        mockResponse = {};
+    });
+
+    test("without email parameter", async () => {
+        const expectedResponse = {
+            json: {
+                error: "Email not present"
+            }
+        }
+        
+        let mockResponse = await authEmails.sendRecoveredConfirmationEmail(null);
+
+        expect(mockResponse).toEqual(expectedResponse.json);
+    });
+
+    // test('with an email parameter', async () => {
+    //     const expectedResponse = {
+    //         json: {
+    //             error: ""
+    //         }
+    //     };
+
+    //     sgMail.send.mockResolvedValue();
+
+    //     let mockResponse = await authEmails.sendVerifiedConfirmationEmail("valid");
+
+    //     expect(mockResponse).not.toHaveReturned();
+    // })
+});

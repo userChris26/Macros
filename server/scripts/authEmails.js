@@ -109,6 +109,10 @@ exports.sendVerifiedConfirmationEmail = async function(email)
 
 exports.sendRecoveredConfirmationEmail = async function(email)
 {
+    if (!email) {
+        return {error: "Email not present"}
+    }
+    
     const msg = {
         to: email,
         from: emailConfig.senderEmail,

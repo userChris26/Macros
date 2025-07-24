@@ -6,9 +6,6 @@ exports.register = async (req, res) =>
 {
 	// incoming: userEmail, userPassword, userFirstName, userLastName
 	// outgoing: error
-
-	
-
 	let ret;
 	
 	try
