@@ -3,15 +3,16 @@ const createJWT = require('../scripts/createJWT.js');
 
 module.exports = function (req, res)
 {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token)
+    if (!req.headers || !req.headers['authorization'])
     {
         return res.status(401).json({ error: 'Token not present' });
     }
 
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
     const userData = jwt.decode(token, { complete: true });
+    
     createJWT.createToken({
         _id: userData.payload.userId,
         firstName: userData.payload.firstName,

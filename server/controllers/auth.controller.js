@@ -7,7 +7,13 @@ exports.register = async (req, res) =>
 	// incoming: userEmail, userPassword, userFirstName, userLastName
 	// outgoing: error
 
-	const { userEmail, userPassword, userFirstName, userLastName } = req.body;
+	
+
+	let ret;
+	
+	try
+	{
+		const { userEmail, userPassword, userFirstName, userLastName } = req.body;
 
 	// Validate required fields
     if (!userEmail || !userPassword || !userFirstName || !userLastName)
@@ -18,11 +24,6 @@ exports.register = async (req, res) =>
             required: ['userEmail', 'userPassword', 'userFirstName', 'userLastName']
         });
     }
-
-	let ret;
-	
-	try
-	{
 		const result = await User.findOne({ email: userEmail });
 		
 		if (result)
