@@ -8,6 +8,7 @@ import '../models/food_search_result.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/loading_widget.dart';
 import '../utils/validation.dart';
+import 'dart:convert';
 
 class FoodLogScreen extends StatefulWidget {
   const FoodLogScreen({Key? key}) : super(key: key);
@@ -56,7 +57,10 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
         return;
       }
       final service = FoodLogService();
-      final entries = await service.fetchFoodEntries(userId, selectedDate);
+      final mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+      final futures = mealTypes.map((mealType) => service.fetchMealEntries(userId, selectedDate, mealType));
+      final results = await Future.wait(futures);
+      final entries = results.expand((e) => e).toList();
       setState(() {
         foodEntries = entries;
         loading = false;
@@ -100,7 +104,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     }
   }
 
-  void _addFoodEntry() async {
+  void _addFoodEntry([String? mealType]) async {
     // Show a dialog to search for foods
     final searchQuery = await showDialog<String>(
       context: context,
@@ -166,7 +170,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
       final selectedFood = await showDialog<FoodSearchResult>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Select Food (${foods.length} results)'),
+          title: Text('Select Food ( ${foods.length} results)'),
           content: SizedBox(
             width: double.maxFinite,
             height: 300,
@@ -246,6 +250,32 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
           return;
         }
 
+        // Use provided mealType or prompt if not given
+        String selectedMealType = mealType ?? 'dinner';
+        if (mealType == null) {
+          final mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+          final pickedMealType = await showDialog<String>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Select Meal Type'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: mealTypes.map((type) => RadioListTile<String>(
+                  title: Text(type[0].toUpperCase() + type.substring(1)),
+                  value: type,
+                  groupValue: selectedMealType,
+                  onChanged: (value) {
+                    Navigator.pop(context, value);
+                  },
+                )).toList(),
+              ),
+            ),
+          );
+          if (pickedMealType != null) {
+            selectedMealType = pickedMealType;
+          }
+        }
+
         // Add the food entry to the backend
         try {
           final authService = Provider.of<AuthService>(context, listen: false);
@@ -257,7 +287,6 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
             });
             return;
           }
-          
           final servingSize = int.tryParse(servingSizeController.text);
           if (servingSize == null || servingSize <= 0) {
             setState(() {
@@ -266,14 +295,13 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
             });
             return;
           }
-
           await service.addFoodEntry(
             userId: userId,
-            fdcId: selectedFood.fdcId.toString(),
-            servingSize: servingSize,
+            fdcId: selectedFood.fdcId, // int
+            servingAmount: servingSize, // int
+            mealType: selectedMealType, // user picked or provided
             date: selectedDate,
           );
-          
           // Refresh the food entries
           _fetchEntries();
         } catch (e) {
@@ -345,6 +373,26 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
   Widget build(BuildContext context) {
     final isToday = DateFormat('yyyy-MM-dd').format(selectedDate) ==
         DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+    final mealLabels = {
+      'breakfast': 'Breakfast',
+      'lunch': 'Lunch',
+      'dinner': 'Dinner',
+      'snack': 'Snack',
+    };
+    // Group entries by meal type
+    Map<String, List<FoodEntry>> entriesByMeal = {
+      for (var meal in mealTypes) meal: [],
+    };
+    for (var entry in foodEntries) {
+      final meal = entry.mealType.toLowerCase();
+      if (entriesByMeal.containsKey(meal)) {
+        entriesByMeal[meal]!.add(entry);
+      }
+    }
+    // Helper to get total kcal for a meal
+    num mealCalories(String meal) => entriesByMeal[meal]!.fold(0, (sum, e) => sum + e.calories);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Food Log'),
@@ -397,57 +445,89 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            // Entries List
+            // Grouped Entries by Meal
             Expanded(
-              child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: loading
-                      ? const AppLoadingWidget(message: 'Loading food entries...')
-                      : errorMessage != null
-                          ? AppErrorWidget(
-                              message: errorMessage!,
-                              onRetry: _fetchEntries,
-                            )
-                          : foodEntries.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'No food entries for ${DateFormat('MMMM d, yyyy').format(selectedDate)}.' +
-                                        (isToday ? ' Click the + button to get started!' : ''),
-                                    style: TextStyle(color: Colors.grey[600]),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                )
-                              : ListView.separated(
-                                  itemCount: foodEntries.length,
-                                  separatorBuilder: (_, __) => const Divider(),
-                                  itemBuilder: (context, index) {
-                                    final entry = foodEntries[index];
-                                    return ListTile(
-                                      leading: const Icon(Icons.restaurant_menu),
-                                      title: Text(entry.foodName),
-                                      subtitle: Text(
-                                        '${entry.servingSize}g • ${entry.calories.toStringAsFixed(0)} kcal',
-                                      ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete_outline),
-                                        onPressed: () => _deleteEntry(entry.id),
-                                      ),
-                                    );
-                                  },
+              child: loading
+                  ? const AppLoadingWidget(message: 'Loading food entries...')
+                  : errorMessage != null
+                      ? AppErrorWidget(
+                          message: errorMessage!,
+                          onRetry: _fetchEntries,
+                        )
+                      : ListView.builder(
+                          itemCount: mealTypes.length,
+                          itemBuilder: (context, idx) {
+                            final meal = mealTypes[idx];
+                            final entries = entriesByMeal[meal]!;
+                            return Card(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(mealLabels[meal]!, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                        Text('${mealCalories(meal).toStringAsFixed(0)} kcal', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.photo_camera),
+                                          label: const Text('Add Photo'),
+                                          onPressed: () {
+                                            // TODO: Implement add photo
+                                          },
+                                        ),
+                                        const SizedBox(width: 8),
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Add Food'),
+                                          onPressed: () => _addFoodEntry(meal),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    entries.isEmpty
+                                        ? const Text('No food entries yet', style: TextStyle(color: Colors.grey))
+                                        : ListView.separated(
+                                            shrinkWrap: true,
+                                            physics: const NeverScrollableScrollPhysics(),
+                                            itemCount: entries.length,
+                                            separatorBuilder: (_, __) => const Divider(),
+                                            itemBuilder: (context, i) {
+                                              final entry = entries[i];
+                                              return ListTile(
+                                                title: Text(entry.foodName),
+                                                subtitle: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    if (entry.brandOwner != null && entry.brandOwner!.isNotEmpty)
+                                                      Text('${entry.brandName != null && entry.brandName!.isNotEmpty ? entry.brandName! + ' • ' : ''}${entry.brandOwner!}'),
+                                                    Text('${entry.servingSize} ${entry.servingSizeUnit} • ${entry.calories.toStringAsFixed(0)} kcal'),
+                                                  ],
+                                                ),
+                                                trailing: IconButton(
+                                                  icon: const Icon(Icons.delete_outline),
+                                                  onPressed: () => _deleteEntry(entry.id),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                  ],
                                 ),
-                ),
-              ),
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addFoodEntry,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Food Entry'),
-        tooltip: 'Add Food Entry',
       ),
     );
   }
@@ -460,5 +540,10 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
         Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     );
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
   }
 } 
