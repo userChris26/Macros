@@ -198,15 +198,22 @@ exports.updateUser = async (req, res, next) =>
 
     try {
 
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { firstName, lastName, bio },
-            { new: true }
-        ).select('-password');
+        // const updatedUser = await User.findByIdAndUpdate(
+        //     userId,
+        //     { firstName, lastName, bio },
+        //     { new: true }
+        // );
+        const updatedUser = await User.findById(userId).select('-password');
 
         if (!updatedUser) {
             return res.status(404).json({ error: 'User not found' });
         }
+
+        await User.findOneAndUpdate(
+            { _id: userId },
+            { $set: {firstName, lastName, bio} },
+            { new: true }
+        );
 
         res.status(200).json({
             message: 'Profile updated successfully',
