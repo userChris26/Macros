@@ -1,6 +1,6 @@
 const MongoMemoryServer = require("mongodb-memory-server");
 const authController = require('../../controllers/auth.controller.js');
-const dbHandler = require("../../utils/dbHandler.util.js");
+// const dbHandler = require("../../utils/dbHandler.util.js");
 const authEmails = require('../../scripts/authEmails.js');
 const User = require('../../models/User.js');
 const mockingoose = require('mockingoose');
