@@ -4,19 +4,26 @@ const FoodEntry = require('../models/FoodEntry.js');
 // Follow a user
 exports.followUser = async (req, res, next) => 
 {    
+    const { followerId, followingId } = req.body;
+
+    if(!followerId || !followingId)
+    {
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
     try
     { 
-        const { followerId, followingId } = req.body;
+        if (followerId === followingId)
+        {
+            return res.json({error: 'Cannot follow yourself'});
+        }
+
         const existing = await Network.findOne({ followerId, followingId });
         
         if (existing)
         {
+            console.log("ASDASDASDA");
             return res.json({ error: 'Already following this user' })
-        }
-        
-        if (followerId === followingId)
-        {
-            return res.json({error: 'Cannot follow yourself'});
         }
 
         await Network.create({ followerId, followingId });
@@ -38,6 +45,17 @@ exports.unfollowUser = async (req, res, next) =>
     try
     {
         const { followerId, followingId } = req.body;
+        if (!followerId || !followingId)
+        {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+
+        // Check if trying to unfollow self
+        if (followerId === followingId)
+        {
+            return res.json({ error: 'Cannot unfollow yourself' });
+        }
+
         const existing = await Network.findOne({ followerId, followingId });
         
         if (!existing)
@@ -45,11 +63,7 @@ exports.unfollowUser = async (req, res, next) =>
             return res.json({ error: 'Not following this user' });
         }
         
-        // Check if trying to unfollow self
-        if (followerId === followingId)
-        {
-            return res.json({ error: 'Cannot unfollow yourself' });
-        }
+        
 
         await Network.findOneAndDelete({ followerId, followingId });
         
@@ -67,9 +81,14 @@ exports.unfollowUser = async (req, res, next) =>
 // Get followers for a user
 exports.getFollowers = async (req, res, next) =>
 {
+    const { userId } = req.params;
+    if (!userId)
+    {
+        return res.status(400).json({ error: "userId not provided" });
+    }
     try
     {
-        const followers = await Network.find({ followingId: req.params.userId })
+        const followers = await Network.find({ followingId: userId })
                                     .populate('followerId', 'firstName lastName email profilePic')
                                     .sort({ createdAt: -1 });
         res.json({ followers, error: '' });
@@ -86,9 +105,15 @@ exports.getFollowers = async (req, res, next) =>
 // Get users being followed by a user
 exports.getFollowing = async (req, res, next) => 
 {
+    const { userId } = req.params;
+    if (!userId)
+    {
+        return res.status(400).json({ error: "userId not provided" });
+    }
+
     try
     {
-        const following = await Network.find({ followerId: req.params.userId })
+        const following = await Network.find({ followerId: userId })
                                     .populate('followingId', 'firstName lastName email profilePic')
                                     .sort({ createdAt: -1 });
         res.json({ following, error: '' });
@@ -108,6 +133,12 @@ exports.getDashboardStats = async (req, res, next) =>
     try
     {
         const { userId } = req.params;
+
+        if (!userId)
+        {
+            return res.status(400).json({ error: "userId not provided" });
+        }
+
         const today = new Date().toISOString().split('T')[0];
 
         // Get today's food entries

@@ -6,12 +6,9 @@ exports.register = async (req, res) =>
 {
 	// incoming: userEmail, userPassword, userFirstName, userLastName
 	// outgoing: error
-	let ret;
 	
-	try
-	{
-		const { userEmail, userPassword, userFirstName, userLastName } = req.body;
-
+	const { userEmail, userPassword, userFirstName, userLastName } = req.body;
+	
 	// Validate required fields
     if (!userEmail || !userPassword || !userFirstName || !userLastName)
     {
@@ -21,6 +18,11 @@ exports.register = async (req, res) =>
             required: ['userEmail', 'userPassword', 'userFirstName', 'userLastName']
         });
     }
+
+	let ret;
+	
+	try
+	{
 		const result = await User.findOne({ email: userEmail });
 		
 		if (result)
@@ -98,9 +100,9 @@ exports.login = async (req, res) =>
 	let hash = blake2.createHash('blake2b');
 	hash.update(Buffer.from(userPassword));
 
-	const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
 	try
 	{
+		const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
 		if (!result)
 		{
 			return res.status(200).json({ error: "Login/Password incorrect" });
@@ -148,6 +150,7 @@ exports.sendRecoveryEmail = async (req, res) =>
             required: ['email']
         });
     }
+
 	try {
 
 		// Find user by email
@@ -216,8 +219,8 @@ exports.recoverEmail = async (req, res) =>
         });
     }
 
-	try {
-		
+	try
+	{
 		// Hash the password
 		let hash = blake2.createHash('blake2b');
 		hash.update(Buffer.from(newPassword));
@@ -294,7 +297,7 @@ exports.sendVerificationEmail = async (req, res) =>
 			return res.status(200).json({ error: '' }); // Success response even if user not found
 		}
 
-		// Generate reset token (valid for 1 hour)
+		// Generate verification token (valid for 1 hour)
 		const verifyToken = require('crypto').randomBytes(32).toString('hex');
 		const verifyTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
 

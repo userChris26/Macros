@@ -4,7 +4,6 @@ const FoodEntry = require('../models/FoodEntry.js');
 // Add or update meal photo
 exports.uploadMealPhoto = async (req, res) =>
 {
-    try {
     const { userId, date, mealType, photoBase64 } = req.body;
 
     if (!userId || !date || !mealType || !photoBase64) {
@@ -14,155 +13,170 @@ exports.uploadMealPhoto = async (req, res) =>
         });
     }
 
-    // Upload to Cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(photoBase64, {
-        folder: 'meal_photos',
-        transformation: [
-        { width: 800, height: 800, crop: 'limit' },
-        { quality: 'auto', fetch_format: 'auto' }
-        ]
-    });
-
-    // Find or create meal
-    const mealDate = new Date(date);
-    mealDate.setHours(0, 0, 0, 0); // Set to start of day
-    const nextDay = new Date(mealDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-
-    let meal = await Meal.findOne({
-        user: userId,
-        date: {
-        $gte: mealDate,
-        $lt: nextDay
-        },
-        mealTime: mealType
-    });
-
-    if (!meal) {
-        meal = new Meal({
-        user: userId,
-        date: mealDate,
-        mealTime: mealType,
-        foods: []
+    try {
+        // Upload to Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(photoBase64, {
+            folder: 'meal_photos',
+            transformation: [
+            { width: 800, height: 800, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' }
+            ]
         });
-    }
 
-    // If meal already had a photo, delete old one from Cloudinary
-    if (meal.photo && meal.photo.publicId) {
-        await cloudinary.uploader.destroy(meal.photo.publicId);
-    }
+        // Find or create meal
+        const mealDate = new Date(date);
+        mealDate.setHours(0, 0, 0, 0); // Set to start of day
+        const nextDay = new Date(mealDate);
+        nextDay.setDate(nextDay.getDate() + 1);
 
-    meal.photo = {
-        url: uploadResponse.secure_url,
-        publicId: uploadResponse.public_id
-    };
+        let meal = await Meal.findOne({
+            user: userId,
+            date: {
+            $gte: mealDate,
+            $lt: nextDay
+            },
+            mealTime: mealType
+        });
 
-    await meal.save();
+        if (!meal) {
+            meal = new Meal({
+            user: userId,
+            date: mealDate,
+            mealTime: mealType,
+            foods: []
+            });
+        }
 
-    res.json({
-        success: true,
-        meal
-    });
+        // If meal already had a photo, delete old one from Cloudinary
+        if (meal.photo && meal.photo.publicId) {
+            await cloudinary.uploader.destroy(meal.photo.publicId);
+        }
+
+        meal.photo = {
+            url: uploadResponse.secure_url,
+            publicId: uploadResponse.public_id
+        };
+
+        await meal.save();
+
+        res.json({
+            success: true,
+            meal
+        });
 
     } catch (error) {
-    console.error('Error handling meal photo:', error);
-    res.status(500).json({
-        success: false,
-        error: 'Failed to handle meal photo'
-    });
+        console.error('Error handling meal photo:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to handle meal photo'
+        });
     }
 }
 
 // Delete meal photo
 exports.deleteMealPhoto = async (req, res) =>
 {
-    try {
     const { userId, date, mealType } = req.body;
 
-    const mealDate = new Date(date);
-    const meal = await Meal.findOne({
-        user: userId,
-        date: {
-        $gte: new Date(mealDate.setHours(0, 0, 0)),
-        $lt: new Date(mealDate.setHours(23, 59, 59))
-        },
-        mealTime: mealType
-    });
-
-    if (!meal) {
-        return res.status(404).json({
-        success: false,
-        error: 'Meal not found'
+    if (!userId || !date || !mealType) {
+        return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields' 
         });
     }
 
-    if (meal.photo && meal.photo.publicId) {
-        await cloudinary.uploader.destroy(meal.photo.publicId);
-        meal.photo = undefined;
-        await meal.save();
-    }
+    try {
+        const mealDate = new Date(date);
+        const meal = await Meal.findOne({
+            user: userId,
+            date: {
+            $gte: new Date(mealDate.setHours(0, 0, 0)),
+            $lt: new Date(mealDate.setHours(23, 59, 59))
+            },
+            mealTime: mealType
+        });
 
-    res.json({
-        success: true,
-        meal
-    });
+        if (!meal) {
+            return res.status(404).json({
+            success: false,
+            error: 'Meal not found'
+            });
+        }
 
+        if (meal.photo && meal.photo.publicId) {
+            await cloudinary.uploader.destroy(meal.photo.publicId);
+            meal.photo = undefined;
+            await meal.save();
+        }
+
+        res.json({
+            success: true,
+            meal
+        });
     } catch (error) {
-    console.error('Error deleting meal photo:', error);
-    res.status(500).json({
-        success: false,
-        error: 'Failed to delete meal photo'
-    });
+        console.error('Error deleting meal photo:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete meal photo'
+        });
     }
 }
 
 // Get meal details including photo
 exports.getMealDetails = async (req, res) =>
 {
-    try {
     const { userId, date, mealType } = req.params;
-    const mealDate = new Date(date);
-    mealDate.setHours(0, 0, 0, 0); // Set to start of day
-    const nextDay = new Date(mealDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-    
-    const meal = await Meal.findOne({
-        user: userId,
-        date: {
-        $gte: mealDate,
-        $lt: nextDay
-        },
-        mealTime: mealType
-    }).populate({
-        path: 'foods',
-        model: 'FoodEntry'
-    });
 
-    if (meal) {
-        console.log('Found meal:', {
-        mealId: meal._id,
-        mealTime: meal.mealTime,
-        foodCount: meal.foods.length,
-        foods: meal.foods.map(food => ({
-            id: food._id,
-            description: food.description,
-            servingAmount: food.servingAmount,
-            nutrients: food.nutrients
-        }))
+    if (!userId || !date || !mealType) {
+        return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required parameters' 
         });
     }
 
-    res.json({
-        success: true,
-        meal
-    });
+    try {
+        const mealDate = new Date(date);
+        mealDate.setHours(0, 0, 0, 0); // Set to start of day
+        const nextDay = new Date(mealDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        const meal = await Meal.findOne({
+            user: userId,
+            date: {
+            $gte: mealDate,
+            $lt: nextDay
+            },
+            mealTime: mealType
+        }).populate({
+            path: 'foods',
+            model: 'FoodEntry'
+        });
+
+        if (meal) {
+            console.log('Found meal:', {
+            mealId: meal._id,
+            mealTime: meal.mealTime,
+            foodCount: meal.foods.length,
+            foods: meal.foods.map(food => ({
+                id: food._id,
+                description: food.description,
+                servingAmount: food.servingAmount,
+                nutrients: food.nutrients
+            }))
+            });
+        }
+
+        res.json({
+            success: true,
+            meal
+        });
 
     } catch (error) {
-    console.error('Error fetching meal:', error);
-    res.status(500).json({
-        success: false,
-        error: 'Failed to fetch meal'
-    });
+        console.error('Error fetching meal:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch meal'
+        });
     }
 }
 
@@ -172,19 +186,26 @@ exports.addMeal = async (req, res) =>
     console.log('=== ADD MEAL ROUTE CALLED ===');
     console.log('Full request body:', JSON.stringify(req.body, null, 2));
     
+    const { userId, mealName, mealType, foodItems, date } = req.body;
+    
+    if (!userId || !mealName || !mealType || !foodItems || foodItems.length === 0) {
+        console.log('ADD MEAL ERROR: Missing required fields');
+        return res.status(400).json({ 
+            error: 'userId, mealName, mealType, and foodItems are required',
+            // received: { userId, mealName, mealType, foodItems }
+        });
+    }
+
+    console.log('Parsed fields:', { userId, mealName, mealType, foodItems, date });
+    
     try {
-        const { userId, mealName, mealType, foodItems, date } = req.body;
-        
-        console.log('Parsed fields:', { userId, mealName, mealType, foodItems, date });
-        
         // Validation
-        if (!userId || !mealName || !foodItems || foodItems.length === 0) {
-            console.log('ADD MEAL ERROR: Missing required fields');
-            return res.status(400).json({ 
-                error: 'userId, mealName, and foodItems are required',
-                received: { userId, mealName, foodItems }
-            });
-        }
+        // if (!userId || !mealName || !foodItems || foodItems.length === 0) {
+        //     return res.status(400).json({ 
+        //         error: 'userId, mealName, and foodItems are required',
+        //         received: { userId, mealName, foodItems }
+        //     });
+        // }
 
         // Calculate total nutrition for the meal
         let totalNutrients = {
@@ -376,27 +397,35 @@ exports.deleteMealTemplate = async (req, res) =>
     const { userId, mealId } = req.body;
     
     console.log('Delete meal request:', { userId, mealId });
-    
-    if (!mealId) {
-        return res.status(400).json({ error: 'Meal ID is required' });
+
+    if (!userId || !mealId) {
+        return res.status(400).json({ error: 'User ID and Meal ID are required' });
     }
 
     try {
-        const result = await Meal.deleteOne({ 
+        const result = await Meal.findOne({
             _id: mealId,
             user: userId, // Security check - only delete user's own meals
             isTemplate: true
         });
         
-        if (result.deletedCount === 1) {
-            console.log('Meal deleted successfully:', mealId);
+        
+        if (!result) {
+            res.status(404).json({ error: 'Meal not found' });
+        }
+
+        await Meal.deleteOne({ 
+            _id: mealId,
+            user: userId, // Security check - only delete user's own meals
+            isTemplate: true
+        });
+
+        console.log('Meal deleted successfully:', mealId);
             res.json({
                 success: true,
                 message: 'Meal deleted'
             });
-        } else {
-            res.status(404).json({ error: 'Meal not found' });
-        }
+
     } catch (error) {
         console.error('Delete meal error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -418,6 +447,11 @@ exports.updateMealTemplate = async (req, res) =>
         });
     }
 
+    if (!mealId) {
+        return res.status(400).json({
+            error: "mealId is required"
+        })
+    }
     try {
         // Calculate total nutrition for the updated meal
         let totalNutrients = {
@@ -498,6 +532,10 @@ exports.getMealTemplate = async (req, res) =>
     
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    if (!mealId) {
+        return res.status(400).json({ error: 'Meal ID is required' });
     }
 
     try {
