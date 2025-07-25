@@ -42,7 +42,7 @@ describe("POST /api/meal/photo", () => {
             status: 200,
             json: {
                 success: true,
-                meal: jest.fn().mockReturnValue()
+                meal: expect.anything()
             }
         }
 
@@ -60,9 +60,8 @@ describe("POST /api/meal/photo", () => {
 
         await mealController.deleteMealPhoto(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 });
 
@@ -118,7 +117,7 @@ describe("DELETE /api/meal/photo", () => {
             status: 200,
             json: {
                 success: true,
-                meal: jest.fn().mockReturnValue()
+                meal: expect.anything()
             }
         }
 
@@ -135,9 +134,9 @@ describe("DELETE /api/meal/photo", () => {
 
         await mealController.deleteMealPhoto(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+        expect(mockResponse.status).not.toHaveBeenCalledWith(500);
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 });
 
@@ -168,7 +167,7 @@ describe("GET /api/meal/:userId/:date/:mealType", () => {
             status: 200,
             json: {
                 success: true,
-                // meal: jest.fn().mockReturnValue()
+                meal: expect.anything()
             }
         }
 
@@ -184,9 +183,9 @@ describe("GET /api/meal/:userId/:date/:mealType", () => {
 
         await mealController.getMealDetails(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+        expect(mockResponse.status).not.toHaveBeenCalledWith(500);
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 });
 

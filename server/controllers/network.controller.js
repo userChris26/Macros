@@ -90,7 +90,7 @@ exports.getFollowers = async (req, res, next) =>
         const followers = await Network.find({ followingId: userId })
                                     .populate('followerId', 'firstName lastName email profilePic')
                                     .sort({ createdAt: -1 });
-        res.json({ followers, error: '' });
+        res.status(200).json({ followers, error: '' });
     }
     catch (err)
     {
@@ -115,7 +115,7 @@ exports.getFollowing = async (req, res, next) =>
         const following = await Network.find({ followerId: userId })
                                     .populate('followingId', 'firstName lastName email profilePic')
                                     .sort({ createdAt: -1 });
-        res.json({ following, error: '' });
+        res.status(200).json({ following, error: '' });
     }
     catch (err)
     {
@@ -155,7 +155,7 @@ exports.getDashboardStats = async (req, res, next) =>
         const followingCount = await Network.countDocuments({ followerId: userId });
         const followersCount = await Network.countDocuments({ followingId: userId });
 
-        res.json({
+        res.status(200).json({
         success: true,
         stats: {
             totalCalories,

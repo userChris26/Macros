@@ -63,7 +63,7 @@ describe("GET /api/users/search", () => {
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 
-    test.only("with a valid query", async () => {
+    test("with a valid query", async () => {
         const expectedResponse = {
             status: 200,
             json: {
@@ -90,7 +90,6 @@ describe("GET /api/users/search", () => {
 
         await userController.searchUser(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
         // expect(mockResponse.json).toHaveBeenCalledWith(
@@ -171,6 +170,9 @@ describe("POST /api/upload-profile-pic/:userId", () => {
         const expectedResponse = {
             status: 200,
             json: {
+                message: "Profile picture uploaded successfully",
+                profilePicUrl: expect.anything(),
+                user: expect.anything(),
                 error: ""
             }
         }
@@ -185,17 +187,21 @@ describe("POST /api/upload-profile-pic/:userId", () => {
         }
         
         mockingoose(User).toReturn({user: "doesExist"}, 'findOne');
-        cloudinary.uploader.upload.mockReturnThis();
-        mockingoose(User).toReturn(null, 'findByIdAndUpdate'); // TODO: Mongoose
+        cloudinary.uploader.upload.mockImplementation(() => {
+            return {secure_url: "test"};
+        });
+        mockingoose(User).toReturn({
+            _id: "id",
+            firstName: "first",
+            lastName: "last",
+            email: "email",
+            profilePic: "pic"
+        }, 'findOneAndUpdate');
 
         await userController.uploadProfilePic(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-        // expect(mockResponse).toHaveProperty('message');
-        // expect(mockResponse).toHaveProperty('profilePicUrl');
-        // expect(mockResponse).toHaveProperty('user');
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
         expect(nextFunction).toHaveBeenCalled();
     })
 });
@@ -245,6 +251,8 @@ describe("DELETE /api/delete-profile-pic/:userId", () => {
         const expectedResponse = {
             status: 200,
             json: {
+                message: "Profile picture deleted successfully",
+                user: expect.anything(),
                 error: ""
             }
         }
@@ -257,15 +265,18 @@ describe("DELETE /api/delete-profile-pic/:userId", () => {
 
         mockingoose(User).toReturn({user: "doesExist"}, 'findOne');
         cloudinary.uploader.destroy.mockReturnThis();
-        mockingoose(User).toReturn(null, 'findByIdAndUpdate'); // TODO: Mongoose
+        mockingoose(User).toReturn({
+            _id: "id",
+            firstName: "first",
+            lastName: "last",
+            email: "email",
+            profilePic: null
+        }, 'findOneAndUpdate');
 
         await userController.deleteProfilePic(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-        // expect(mockResponse).toHaveProperty('message');
-        // expect(mockResponse).toHaveProperty('user');
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
         expect(nextFunction).toHaveBeenCalled();
     });
 });
@@ -315,7 +326,7 @@ describe("GET /api/user/:userId", () => {
         const expectedResponse = {
             status: 200,
             json: {
-                // user: jest.fn().mockReturnThis(),
+                user: expect.any(Object),
                 error: ""
             }
         }
@@ -326,14 +337,19 @@ describe("GET /api/user/:userId", () => {
             }
         }
 
-        mockingoose(User).toReturn({user: "doesExist"}, 'findOne');
+        mockingoose(User).toReturn({
+            _id: "id",
+            firstName: "first",
+            lastName: "last",
+            email: "email",
+            bio: "bio",
+            createdAt: Date.now()
+        }, 'findOne');
 
         await userController.getUser(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-        // expect(mockResponse).toHaveProperty("user");
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
         expect(nextFunction).toHaveBeenCalled();
     });
 });

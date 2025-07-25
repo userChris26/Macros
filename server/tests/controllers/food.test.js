@@ -108,9 +108,6 @@ describe("POST /api/deletefoodentry", () => {
             }
         }
 
-        mockingoose(FoodEntry).toReturn({entry: "valid"}, 'findOne');
-        mockingoose(FoodEntry).toReturn(null, 'deleteOne')
-
         mockRequest = {
             body: {
                 userId: "test",
@@ -118,11 +115,12 @@ describe("POST /api/deletefoodentry", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(FoodEntry).toReturn({entry: "valid"}, 'findOne');
+        mockingoose(FoodEntry).toReturn(null, 'deleteOne');
 
         await foodController.deleteFoodEntry(mockRequest, mockResponse);
 
-        // expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 });

@@ -221,7 +221,7 @@ describe("GET /api/followers/:userId", () => {
         const expectedResponse = {
             status: 200,
             json: {
-                // followers: jest.fn().mockReturnValue(),
+                followers: expect.anything(),
                 error: ""
             }
         }
@@ -236,11 +236,9 @@ describe("GET /api/followers/:userId", () => {
 
         await networkController.getFollowers(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
-        // expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-        // expect(mockResponse).toHaveProperty("followers");
+        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
         expect(mockResponse.status).not.toHaveBeenCalledWith(500);
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
         expect(nextFunction).toHaveBeenCalled();
     });
 });
@@ -268,7 +266,7 @@ describe("GET /api/following/:userId", () => {
         const expectedResponse = {
             status: 200,
             json: {
-                // following: jest.fn().mockReturnValue(),
+                following: expect.anything(),
                 error: ""
             }
         }
@@ -283,10 +281,9 @@ describe("GET /api/following/:userId", () => {
 
         await networkController.getFollowing(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
-        // expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
         expect(mockResponse.status).not.toHaveBeenCalledWith(500);
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
         expect(nextFunction).toHaveBeenCalled();
     });
 });
@@ -315,7 +312,7 @@ describe("GET /api/dashboard/stats/:userId", () => {
             status: 200,
             json: {
                 success: true,
-                stats: jest.fn().mockReturnValue(),
+                stats: expect.anything()
             }
         }
 
@@ -330,10 +327,9 @@ describe("GET /api/dashboard/stats/:userId", () => {
 
         await networkController.getDashboardStats(mockRequest, mockResponse, nextFunction);
 
-        // TODO: Make this test more thorough
-        // expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
         expect(mockResponse.status).not.toHaveBeenCalledWith(500);
+        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
         expect(nextFunction).toHaveBeenCalled();
     });
 });

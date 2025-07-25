@@ -108,7 +108,7 @@ exports.deleteFoodEntry = async (req, res) =>
         });
 
         console.log('Food entry deleted successfully:', entryId);
-        res.json({
+        res.status(200).json({
             success: true,
             message: 'Food entry deleted',
             error: ''

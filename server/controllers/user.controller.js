@@ -71,9 +71,9 @@ exports.uploadProfilePic = async (req, res, next) =>
         });
 
         // Update user's profile picture URL in database
-        updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { profilePic: uploadResponse.secure_url },
+        updatedUser = await User.findOneAndUpdate(
+            { _id: userId},
+            { $set: {profilePic: uploadResponse.secure_url} },
             { new: true }
         );
 
@@ -121,9 +121,9 @@ exports.deleteProfilePic =  async (req, res, next) =>
         }
 
         // Update user in database
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { profilePic: null },
+        const updatedUser = await User.findOneAndUpdate(
+            { _id: userId },
+            { $set: {profilePic: null} },
             { new: true }
         );
 
