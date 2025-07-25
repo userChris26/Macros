@@ -46,8 +46,9 @@ exports.uploadProfilePic = async (req, res, next) =>
 {
     try {
         const { userId } = req.params;
+        // const photoBase64 = req.file;
         const { photoBase64 } = req.body;
-        
+
         if (!userId) {
             return res.status(400).json({ error: "No userId provided" });
         }
@@ -62,13 +63,14 @@ exports.uploadProfilePic = async (req, res, next) =>
         }
         
          // Upload to Cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(photoBase64, {
+         const uploadResponse = await cloudinary.uploader.upload(photoBase64, {// photoBase64.path, {
             folder: 'profile_pictures',
             transformation: [
                 { width: 400, height: 400, crop: 'fill', gravity: 'face' },
                 { quality: 'auto', fetch_format: 'auto' }
             ]
         });
+
 
         // Update user's profile picture URL in database
         updatedUser = await User.findOneAndUpdate(
@@ -191,7 +193,7 @@ exports.updateUser = async (req, res, next) =>
     }
     
     const { firstName, lastName, bio } = req.body;
-    if (!firstName || !lastName || !bio)
+    if (!firstName || !lastName)
     {
         return res.status(400).json({error: "User details not provided"});
     }

@@ -65,7 +65,8 @@ exports.register = async (req, res) =>
 		ret = authEmails.sendVerifyEmail(userEmail, verifyToken);
 		if (ret && ret.error !== '')
 		{
-			throw new sendGridError;
+			console.log(ret.error);
+			throw new Error;
 		}
 	}
 	catch(e)
