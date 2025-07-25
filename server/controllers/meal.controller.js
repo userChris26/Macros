@@ -1,5 +1,6 @@
 const Meal = require('../models/Meal.js');
 const FoodEntry = require('../models/FoodEntry.js');
+const { cloudinary } = require('../config/cloudinary.js');
 
 // Add or update meal photo
 exports.uploadMealPhoto = async (req, res) =>
@@ -59,7 +60,7 @@ exports.uploadMealPhoto = async (req, res) =>
 
         await meal.save();
 
-        res.json({
+        res.status(200).json({
             success: true,
             meal
         });
@@ -109,7 +110,7 @@ exports.deleteMealPhoto = async (req, res) =>
             await meal.save();
         }
 
-        res.json({
+        res.status(200).json({
             success: true,
             meal
         });
@@ -166,7 +167,7 @@ exports.getMealDetails = async (req, res) =>
             });
         }
 
-        res.json({
+        res.status(200).json({
             success: true,
             meal
         });

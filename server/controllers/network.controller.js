@@ -22,7 +22,6 @@ exports.followUser = async (req, res, next) =>
         
         if (existing)
         {
-            console.log("ASDASDASDA");
             return res.json({ error: 'Already following this user' })
         }
 

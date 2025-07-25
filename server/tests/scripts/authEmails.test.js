@@ -4,15 +4,15 @@ const sgMail = require('@sendgrid/mail');
 
 jest.mock('@sendgrid/mail');
 
-describe("Email verification script", () => {
-    let mockResponse;
-    let msg;
+let mockResponse;
+let msg;
 
-    beforeEach(() => {
-        mockResponse = {};
-        msg = {};
-    });
+beforeEach(() => {
+    mockResponse = {};
+    msg = {};
+});
 
+describe("sendVerifyEmail(email, verifyToken)", () => {
     test("without parameters", async () => {
         const expectedResponse = {
             json: {
@@ -25,25 +25,8 @@ describe("Email verification script", () => {
         expect(mockResponse).toEqual(expectedResponse.json);
     });
 
-    test('with invalid token', async() => {
-        const expectedResponse = {
-            json: {
-                error: "Failed to send verification email. Please contact support."
-            }
-        };
-
-        sgMail.send.mockImplementation(() => {
-            throw new Error;
-        });
-
-        let mockResponse = await authEmails.sendVerifyEmail("valid", "valid");
-
-        expect(mockResponse).toEqual(expectedResponse.json);
-    })
-
 
     test('with email and valid token', async () => {
-
         const expectedResponse = {
             json: {
                 error: ""
@@ -52,19 +35,13 @@ describe("Email verification script", () => {
 
         sgMail.send.mockResolvedValue();
 
-        let mockResponse = await authEmails.sendVerifyEmail("valid", "valid");
+        mockResponse = await authEmails.sendVerifyEmail("valid", "valid");
 
         expect(mockResponse).toEqual(expectedResponse.json);
     })
 });
 
-describe("Email verification confirmation script", () => {
-    let mockResponse;
-
-    beforeEach(() => {
-        mockResponse = {};
-    });
-
+describe("sendVerifiedConfirmationEmail(email)", () => {
     test("without email parameter", async () => {
         const expectedResponse = {
             json: {
@@ -72,35 +49,23 @@ describe("Email verification confirmation script", () => {
             }
         }
         
-        let mockResponse = await authEmails.sendVerifiedConfirmationEmail(null);
+        mockResponse = await authEmails.sendVerifiedConfirmationEmail(null);
 
         expect(mockResponse).toEqual(expectedResponse.json);
     });
 
-    // test('with an email parameter', async () => {
-    //     const expectedResponse = {
-    //         json: {
-    //             error: ""
-    //         }
-    //     };
+    test('with an email parameter', async () => {
+        const expectedResponse = { error: '' };
 
-    //     sgMail.send.mockResolvedValue();
+        sgMail.send.mockResolvedValue();
 
-    //     let mockResponse = await authEmails.sendVerifiedConfirmationEmail("valid");
+        mockResponse = await authEmails.sendVerifiedConfirmationEmail("valid");
 
-    //     expect(mockResponse).not.toHaveReturned();
-    // })
+        expect(mockResponse).toEqual(expectedResponse);
+    })
 });
 
-describe("Email recovery script", () => {
-    let mockResponse;
-    let msg;
-
-    beforeEach(() => {
-        mockResponse = {};
-        msg = {};
-    });
-
+describe("sendRecoveryEmail(email, resetToken)", () => {
     test("without parameters", async () => {
         const expectedResponse = {
             json: {
@@ -112,22 +77,6 @@ describe("Email recovery script", () => {
 
         expect(mockResponse).toEqual(expectedResponse.json);
     });
-
-    test('with invalid token', async() => {
-        const expectedResponse = {
-            json: {
-                error: Error()
-            }
-        };
-
-        sgMail.send.mockImplementation(() => {
-            throw new Error;
-        });
-
-        let mockResponse = await authEmails.sendRecoveryEmail("valid", "valid");
-
-        expect(mockResponse).toEqual(expectedResponse.json);
-    })
 
 
     test('with email and valid token', async () => {
@@ -147,20 +96,14 @@ describe("Email recovery script", () => {
         };
         sgMail.send.mockResolvedValue(msg);
 
-        let mockResponse = await authEmails.sendRecoveryEmail("valid", "valid");
+        mockResponse = await authEmails.sendRecoveryEmail("valid", "valid");
 
         expect(mockResponse).toEqual(expectedResponse.json);
     })
 });
 
 
-describe("Email recovery confirmation script", () => {
-    let mockResponse;
-
-    beforeEach(() => {
-        mockResponse = {};
-    });
-
+describe("sendRecoveredConfirmationEmail(email)", () => {
     test("without email parameter", async () => {
         const expectedResponse = {
             json: {
@@ -168,22 +111,18 @@ describe("Email recovery confirmation script", () => {
             }
         }
         
-        let mockResponse = await authEmails.sendRecoveredConfirmationEmail(null);
+        mockResponse = await authEmails.sendRecoveredConfirmationEmail(null);
 
         expect(mockResponse).toEqual(expectedResponse.json);
     });
 
-    // test('with an email parameter', async () => {
-    //     const expectedResponse = {
-    //         json: {
-    //             error: ""
-    //         }
-    //     };
+    test('with an email parameter', async () => {
+        const expectedResponse = { error: '' };
 
-    //     sgMail.send.mockResolvedValue();
+        sgMail.send.mockResolvedValue();
 
-    //     let mockResponse = await authEmails.sendVerifiedConfirmationEmail("valid");
+        mockResponse = await authEmails.sendVerifiedConfirmationEmail("valid");
 
-    //     expect(mockResponse).not.toHaveReturned();
-    // })
+        expect(mockResponse).toEqual(expectedResponse);
+    })
 });

@@ -105,6 +105,8 @@ exports.sendVerifiedConfirmationEmail = async function(email)
         console.error('Failed to send confirmation email:', emailError);
         // Don't return error to client - email was still verified successfully
     }
+
+    return { error: '' };
 }
 
 exports.sendRecoveredConfirmationEmail = async function(email)
@@ -132,4 +134,6 @@ exports.sendRecoveredConfirmationEmail = async function(email)
         console.error('Failed to send confirmation email:', emailError);
         // Don't return error to client - password was still reset successfully
     }
+
+    return { error: '' };
 }

@@ -6,13 +6,13 @@ const FoodEntry = require('../models/FoodEntry.js');
 
 exports.searchUser = async (req, res, next) =>
 {
+    const { q } = req.query;
+
+    if (!q) {
+        return res.status(400).json({ error: 'Search query is required' });
+    }
+
     try {
-        const { q } = req.query;
-
-        if (!q) {
-            return res.status(400).json({ error: 'Search query is required' });
-        }
-
         // Search by first name, last name, or email
         const users = await User.find({
             $or: [
@@ -49,7 +49,7 @@ exports.uploadProfilePic = async (req, res, next) =>
         const { photoBase64 } = req.body;
         
         if (!userId) {
-            return res.status(400).json({ error: "No userId provided "});
+            return res.status(400).json({ error: "No userId provided" });
         }
 
         if (!photoBase64) {
@@ -60,8 +60,8 @@ exports.uploadProfilePic = async (req, res, next) =>
         if (!updatedUser) {
             return res.status(404).json({ error: 'User not found' });
         }
-
-        // Upload to Cloudinary
+        
+         // Upload to Cloudinary
         const uploadResponse = await cloudinary.uploader.upload(photoBase64, {
             folder: 'profile_pictures',
             transformation: [
@@ -71,7 +71,7 @@ exports.uploadProfilePic = async (req, res, next) =>
         });
 
         // Update user's profile picture URL in database
-        await User.findByIdAndUpdate(
+        updatedUser = await User.findByIdAndUpdate(
             userId,
             { profilePic: uploadResponse.secure_url },
             { new: true }
@@ -109,6 +109,7 @@ exports.deleteProfilePic =  async (req, res, next) =>
         }
 
         const user = await User.findById(userId);
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -120,7 +121,7 @@ exports.deleteProfilePic =  async (req, res, next) =>
         }
 
         // Update user in database
-        await User.findByIdAndUpdate(
+        const updatedUser = await User.findByIdAndUpdate(
             userId,
             { profilePic: null },
             { new: true }

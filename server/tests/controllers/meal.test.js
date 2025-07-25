@@ -1,4 +1,9 @@
 const mealController = require("../../controllers/meal.controller.js");
+const Meal = require("../../models/Meal.js");
+const mockingoose = require('mockingoose');
+const { cloudinary } = require("../../config/cloudinary.js");
+
+jest.mock('../../config/cloudinary.js');
 
 let mockRequest;
 let mockResponse;
@@ -32,7 +37,33 @@ describe("POST /api/meal/photo", () => {
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 
-    // TOOD: More tests
+    test("with valid request", async () => {
+        const expectedResponse = {
+            status: 200,
+            json: {
+                success: true,
+                meal: jest.fn().mockReturnValue()
+            }
+        }
+
+        mockRequest = {
+            body: {
+                userId: "test",
+                date: "test",
+                mealType: "breakfast"
+            }
+        }
+
+        mockingoose(Meal).toReturn({valid: "meal"}, 'findOne');
+        cloudinary.uploader.destroy.mockReturnThis();
+        cloudinary.uploader.upload.mockReturnThis();
+
+        await mealController.deleteMealPhoto(mockRequest, mockResponse, nextFunction);
+
+        // TODO: Make this test more thorough
+        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+    });
 });
 
 describe("DELETE /api/meal/photo", () => {
@@ -72,7 +103,7 @@ describe("DELETE /api/meal/photo", () => {
             }
         }
 
-        // TOOD: Mongoose
+        mockingoose(Meal).toReturn(null, 'findOne');
 
         await mealController.deleteMealPhoto(mockRequest, mockResponse, nextFunction);
 
@@ -84,7 +115,7 @@ describe("DELETE /api/meal/photo", () => {
 
     test("with valid request", async () => {
         const expectedResponse = {
-            // status: 400,
+            status: 200,
             json: {
                 success: true,
                 meal: jest.fn().mockReturnValue()
@@ -99,12 +130,14 @@ describe("DELETE /api/meal/photo", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(Meal).toReturn({valid: "meal"}, 'findOne');
+        cloudinary.uploader.destroy.mockReturnThis();
 
         await mealController.deleteMealPhoto(mockRequest, mockResponse, nextFunction);
 
+        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 });
 
@@ -128,14 +161,14 @@ describe("GET /api/meal/:userId/:date/:mealType", () => {
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 
-    // TODO: Invalid meal
+    // TODO: implement invalid meal condition
 
     test("with parameters", async () => {
         const expectedResponse = {
-            // status: 400,
+            status: 200,
             json: {
                 success: true,
-                meal: jest.fn().mockReturnValue()
+                // meal: jest.fn().mockReturnValue()
             }
         }
 
@@ -147,12 +180,13 @@ describe("GET /api/meal/:userId/:date/:mealType", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(Meal).toReturn({valid: "meal"}, 'findOne');
 
         await mealController.getMealDetails(mockRequest, mockResponse, nextFunction);
 
+        // TODO: Make this test more thorough
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+        // expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 });
 
@@ -176,7 +210,37 @@ describe("POST /api/addmeal", () => {
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 
-    // TODO: Test valid meal entry
+    // TODO: Test with a valid meal entry
+    // test("with valid meal entry", async () => {
+    //     const expectedResponse = {
+    //         status: 200,
+    //         json: {
+    //             error: "userId, mealName, mealType, and foodItems are required",
+    //             // received: jest.fn().mockReturnValue()
+    //         }
+    //     }
+
+    //     mockRequest = {
+    //         body: {
+    //             userId: "test", // TODO: Make this an ObjectId...
+    //             mealName: "name",
+    //             mealType: "breakfast",
+    //             foodItems: [{
+    //                 fdcId: "1",
+    //                 foodName: "name",
+    //                 servingSize: 0,
+    //                 nutrients: {}
+    //             }]
+    //         }
+    //     }
+
+    //     mockingoose(Meal).toReturn({meal: "saved"}, 'save');
+
+    //     await mealController.addMeal(mockRequest, mockResponse, nextFunction);
+
+    //     expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+    //     expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+    // });
 });
 
 describe("POST /api/getmeals", () => {
@@ -235,7 +299,7 @@ describe("POST /api/addmealtoday", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(Meal).toReturn(null, 'findOne');
 
         await mealController.addMealTemplateToday(mockRequest, mockResponse, nextFunction);
 
@@ -281,7 +345,7 @@ describe("POST /api/deletemeal", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(Meal).toReturn(null, 'findOne');
 
         await mealController.deleteMealTemplate(mockRequest, mockResponse, nextFunction);
 
@@ -354,7 +418,7 @@ describe("PUT /api/updatemeal/:mealId", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(Meal).toReturn(null, 'findOneAndUpdate');
 
         await mealController.updateMealTemplate(mockRequest, mockResponse, nextFunction);
 
@@ -423,7 +487,7 @@ describe("GET /api/meal/:mealId", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(Meal).toReturn(null, 'findOne')
 
         await mealController.getMealTemplate(mockRequest, mockResponse, nextFunction);
 

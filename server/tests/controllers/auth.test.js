@@ -1,9 +1,16 @@
+const MongoMemoryServer = require("mongodb-memory-server");
 const authController = require('../../controllers/auth.controller.js');
+const dbHandler = require("../../utils/dbHandler.util.js");
 const authEmails = require('../../scripts/authEmails.js');
 const User = require('../../models/User.js');
+const mockingoose = require('mockingoose');
+const createJWT = require("../../scripts/createJWT.js");
 
-jest.mock('../../scripts/authEmails.js');
-jest.mock('../../models/User.js');
+// beforeAll(async () => dbHandler.dbConnect());
+// afterAll(async () => dbHandler.dbDisconnect());
+
+jest.mock('../../scripts/authEmails.js')
+jest.mock('../../scripts/createJWT.js');
 
 let mockRequest;
 let mockResponse;
@@ -39,7 +46,7 @@ describe("POST /api/register", () => {
 
     test("with a registered user", async () => {
         const expectedResponse = {
-            status: 200,
+            status: 400,
             json: {
                 error:  "Account Already Exists"
             }
@@ -54,7 +61,7 @@ describe("POST /api/register", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn({already: 'exists'}, 'findOne');
 
         await authController.register(mockRequest, mockResponse);
 
@@ -62,13 +69,11 @@ describe("POST /api/register", () => {
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 
-    test("with a registered user", async () => {
+    test("with am unregistered user", async () => {
         const expectedResponse = {
-            status: 400,
+            status: 200,
             json: {
-                success: false,
-                error: "Missing required fields",
-                required: ['userEmail', 'userPassword', 'userFirstName', 'userLastName']
+                error: "",
             }
         }
 
@@ -81,7 +86,9 @@ describe("POST /api/register", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn(null, 'findOne');
+        mockingoose(User).toReturn(null, 'save');
+        authEmails.sendVerifyEmail.mockReturnValue({error: ''});
 
         await authController.register(mockRequest, mockResponse);
 
@@ -113,7 +120,7 @@ describe("POST /api/login", () => {
 
     test("with a nonexistent account", async () => {
         const expectedResponse = {
-            status: 200,
+            status: 400,
             json: {
                 error: "Login/Password incorrect",
             }
@@ -126,7 +133,7 @@ describe("POST /api/login", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn(null, 'findOne');
 
         await authController.login(mockRequest, mockResponse);
 
@@ -134,12 +141,11 @@ describe("POST /api/login", () => {
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 
-    // TODO: test("with an unverified user")
     test("with an unverified account", async () => {
         const expectedResponse = {
             status: 200,
             json: {
-                error: "Please verify your email before loggin in",
+                error: "Please verify your email before logging in",
                 needsVerification: true
             }
         }
@@ -151,20 +157,19 @@ describe("POST /api/login", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn({account: 'exists', isVerified: false}, 'findOne');
 
         await authController.login(mockRequest, mockResponse);
 
         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
-    // TODO: test("with a jwt error")
 
     test("with a registered and verified account", async () => {
         const expectedResponse = {
             status: 200,
             json: {
-                accessToken: jest.fn().mockReturnValue(),
+                accessToken: "test",
                 error: "",
             }
         }
@@ -176,7 +181,8 @@ describe("POST /api/login", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn({account: 'exists', isVerified: true}, 'findOne');
+        createJWT.createToken.mockReturnValue({accessToken: "test"});
 
         await authController.login(mockRequest, mockResponse);
 
@@ -216,11 +222,11 @@ describe("POST /api/send-email-verification", () => {
 
         mockRequest = {
             body: {
-                userEmail: "DNE",
+                email: "DNE",
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn(null, 'findOne');
 
         await authController.sendRecoveryEmail(mockRequest, mockResponse);
 
@@ -238,11 +244,13 @@ describe("POST /api/send-email-verification", () => {
 
         mockRequest = {
             body: {
-                userEmail: "unverified",
+                email: "unverified",
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn({account: "exists"}, 'findOne');
+        mockingoose(User).toReturn(null, 'findByIdAndUpdate');
+        authEmails.sendRecoveryEmail.mockReturnValue({ error: '' });
 
         await authController.sendRecoveryEmail(mockRequest, mockResponse);
 
@@ -278,17 +286,17 @@ describe("POST /api/verify-email", () => {
         const expectedResponse = {
             status: 400,
             json: {
-                error: "Invalid or expred reset token",
+                error: "Invalid or expired verification token",
             }
         }
 
         mockRequest = {
             body: {
-                token: "bad"
+                token: "Bearer invalid"
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn(null, 'findOne');
 
         await authController.verifyEmail(mockRequest, mockResponse);
 
@@ -306,12 +314,12 @@ describe("POST /api/verify-email", () => {
 
         mockRequest = {
             body: {
-                token: "valid"
+                token: "Bearer valid"
             }
         }
 
-        // TODO: Mongoose
-        // TODO: SendGrid
+        mockingoose(User).toReturn({account: "hasValidToken"}, 'findOne');
+        authEmails.sendRecoveredConfirmationEmail.mockReturnThis();
 
         await authController.verifyEmail(mockRequest, mockResponse);
 
@@ -355,7 +363,7 @@ describe("POST /api/forgot-password", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn(null, 'findOne');
 
         await authController.sendRecoveryEmail(mockRequest, mockResponse);
 
@@ -378,8 +386,9 @@ describe("POST /api/forgot-password", () => {
         }
 
         // TOOD: Correct the control flow
-        // TODO: Mongoose
-        // TODO: SendGrid
+        mockingoose(User).toReturn({account: "exists"}, 'findOne');
+        mockingoose(User).toReturn(null, 'findByIdAndUpdate');
+        authEmails.sendRecoveryEmail.mockReturnValue({ error: '' });
 
         await authController.sendRecoveryEmail(mockRequest, mockResponse);
 
@@ -427,7 +436,7 @@ describe("POST /api/reset-password", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(User).toReturn(null, 'findOne');
 
         await authController.recoverEmail(mockRequest, mockResponse);
 
@@ -450,8 +459,8 @@ describe("POST /api/reset-password", () => {
             }
         }
 
-        // TODO: Mongoose
-        // TODO: SendGrid
+        mockingoose(User).toReturn({account: "hasValidToken"}, 'findOne');
+        authEmails.sendRecoveredConfirmationEmail.mockReturnThis();
 
         await authController.recoverEmail(mockRequest, mockResponse);
 

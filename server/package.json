@@ -20,6 +20,7 @@
         "dotenv": "^16.6.1",
         "express": "^4.21.2",
         "jsonwebtoken": "^9.0.2",
+        "mockingoose": "^2.16.2",
         "mongodb": "^6.17.0",
         "mongodb-memory-server": "^10.1.4",
         "mongoose": "^8.16.1",
@@ -30,8 +31,8 @@
         "sendgrid": "^5.2.3"
     },
     "devDependencies": {
-        "node-mocks-http": "^1.17.2",
         "@types/jest": "^30.0.0",
-        "jest": "^30.0.5"
+        "jest": "^30.0.5",
+        "node-mocks-http": "^1.17.2"
     }
 }

@@ -1,5 +1,6 @@
 const foodController = require("../../controllers/food.controller.js");
 const FoodEntry = require("../../models/FoodEntry.js");
+const mockingoose = require('mockingoose');
 
 let mockRequest;
 let mockResponse;
@@ -89,7 +90,7 @@ describe("POST /api/deletefoodentry", () => {
             }
         }
 
-        // TODO: Mongoose
+        mockingoose(FoodEntry).toReturn(null, 'findOne');
 
         await foodController.deleteFoodEntry(mockRequest, mockResponse);
 
@@ -106,6 +107,9 @@ describe("POST /api/deletefoodentry", () => {
                 error: ""
             }
         }
+
+        mockingoose(FoodEntry).toReturn({entry: "valid"}, 'findOne');
+        mockingoose(FoodEntry).toReturn(null, 'deleteOne')
 
         mockRequest = {
             body: {

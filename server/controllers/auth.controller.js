@@ -27,7 +27,7 @@ exports.register = async (req, res) =>
 		
 		if (result)
 		{
-			return res.status(200).json({ error: "Account Already Exists" });
+			return res.status(400).json({ error: "Account Already Exists" });
 		}
 
 		// Hash the password
@@ -105,7 +105,7 @@ exports.login = async (req, res) =>
 		const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
 		if (!result)
 		{
-			return res.status(200).json({ error: "Login/Password incorrect" });
+			return res.status(400).json({ error: "Login/Password incorrect" });
 		}
 
 		if (!result.isVerified)
@@ -172,7 +172,8 @@ exports.sendRecoveryEmail = async (req, res) =>
 		});
 
 		// Save reset token to user
-		const updatedUser = await User.findByIdAndUpdate(
+		// const updatedUser = await User.findByIdAndUpdate(
+		await User.findByIdAndUpdate(
 			user._id,
 			{
 				resetToken,
@@ -181,11 +182,11 @@ exports.sendRecoveryEmail = async (req, res) =>
 			{ new: true }
 		);
 
-		console.log('Updated user with reset token:', {
-			email: updatedUser.email,
-			tokenSaved: updatedUser.resetToken === resetToken,
-			expiry: updatedUser.resetTokenExpiry.toISOString()
-		});
+		// console.log('Updated user with reset token:', {
+		// 	email: updatedUser.email,
+		// 	tokenSaved: updatedUser.resetToken === resetToken,
+		// 	expiry: updatedUser.resetTokenExpiry.toISOString()
+		// });
 
 		// Send email using SendGrid
 		const ret = authEmails.sendRecoveryEmail(email, resetToken);
@@ -193,6 +194,8 @@ exports.sendRecoveryEmail = async (req, res) =>
 		{
 			throw new sendGridError;
 		}
+
+		res.status(200).json({error: ''});
 	}
 	catch (err)
 	{
@@ -375,7 +378,7 @@ exports.verifyEmail = async (req, res) =>
 			{
 				console.log('No user found with token');
 			}
-			return res.status(400).json({ error: 'Invalid or expired reset token' });
+			return res.status(400).json({ error: 'Invalid or expired verification token' });
 		}
 		console.log('Found user for email verification:', user.email);
 
