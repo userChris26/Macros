@@ -1,7 +1,7 @@
 # Macros - Social Nutrition Tracker
 
 <div align="center">
-  <img src="client/public/banner-macros-transparent-stroke.png" alt="Macros - Social Nutrition Tracker" width="800"/>
+  <img src="client/public/banner.png" alt="Macros - Social Nutrition Tracker" width="800"/>
 </div>
 
 ## Overview
