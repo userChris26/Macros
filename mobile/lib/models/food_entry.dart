@@ -5,11 +5,13 @@ class FoodEntry {
   final String fdcId;
   final String foodName;
   final String? brandOwner;
+  final String? brandName;
   final double servingSize;
   final String servingSizeUnit;
   final Map<String, String> nutrients;
   final String dateAdded;
   final String timestamp;
+  final String mealType;
 
   FoodEntry({
     required this.id,
@@ -17,25 +19,36 @@ class FoodEntry {
     required this.fdcId,
     required this.foodName,
     this.brandOwner,
+    this.brandName,
     required this.servingSize,
     required this.servingSizeUnit,
     required this.nutrients,
     required this.dateAdded,
     required this.timestamp,
+    required this.mealType,
   });
 
   factory FoodEntry.fromJson(Map<String, dynamic> json) {
+    // Handle nutrients: convert all values to String
+    Map<String, String> nutrientsMap = {};
+    if (json['nutrients'] != null) {
+      (json['nutrients'] as Map<String, dynamic>).forEach((key, value) {
+        nutrientsMap[key] = value.toString();
+      });
+    }
     return FoodEntry(
       id: json['_id'] ?? json['id'] ?? '',
       userId: json['userId'] ?? '',
       fdcId: json['fdcId']?.toString() ?? '',
-      foodName: json['foodName'] ?? '',
+      foodName: json['foodName'] ?? json['description'] ?? '',
       brandOwner: json['brandOwner'],
-      servingSize: (json['servingSize'] ?? 0).toDouble(),
-      servingSizeUnit: json['servingSizeUnit'] ?? 'g',
-      nutrients: Map<String, String>.from(json['nutrients'] ?? {}),
-      dateAdded: json['dateAdded'] ?? '',
-      timestamp: json['timestamp'] ?? '',
+      brandName: json['brandName'],
+      servingSize: (json['servingAmount'] ?? json['servingSize'] ?? json['gramWeight'] ?? 0).toDouble(),
+      servingSizeUnit: json['servingUnit'] ?? json['servingSizeUnit'] ?? 'g',
+      nutrients: nutrientsMap,
+      dateAdded: json['dateAdded'] ?? json['date'] ?? '',
+      timestamp: json['timestamp'] ?? json['createdAt'] ?? '',
+      mealType: json['mealType'] ?? 'meal',
     );
   }
 
@@ -46,11 +59,13 @@ class FoodEntry {
       'fdcId': fdcId,
       'foodName': foodName,
       'brandOwner': brandOwner,
+      'brandName': brandName,
       'servingSize': servingSize,
       'servingSizeUnit': servingSizeUnit,
       'nutrients': nutrients,
       'dateAdded': dateAdded,
       'timestamp': timestamp,
+      'mealType': mealType,
     };
   }
 

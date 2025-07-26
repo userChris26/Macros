@@ -1,7 +1,6 @@
 class ApiConstants {
   // Base URL for API endpoints
-  static const String baseUrl = 'http://10.0.2.2:5000';
-  static const String apiUrl = '$baseUrl/api';
+  static const String apiUrl = 'https://cop4331iscool.xyz/api';
   
   // API Endpoints
   static const String loginEndpoint = '$apiUrl/login';
