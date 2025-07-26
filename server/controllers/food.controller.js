@@ -80,6 +80,11 @@ exports.deleteFoodEntry = async (req, res) =>
 {
     console.log('=== DELETE FOOD ENTRY ROUTE CALLED ===');
     const { userId, entryId } = req.body;
+
+    if (!userId)
+    {
+        return res.status(400).json({ error: "User ID is required" });
+    }
     
     console.log('Delete food entry request:', { userId, entryId });
     
@@ -88,20 +93,27 @@ exports.deleteFoodEntry = async (req, res) =>
     }
 
     try {
-        const result = await FoodEntry.deleteOne({ 
+        const result = await FoodEntry.findOne({
+            _id: entryId,
+            userId: userId
+        })
+
+        if (!result) {
+            return res.status(404).json({ error: 'Food entry not found'});
+        }
+
+        await FoodEntry.deleteOne({ 
             _id: entryId,
             userId: userId // Also check userId for security
         });
-        
-        if (result.deletedCount === 1) {
-            console.log('Food entry deleted successfully:', entryId);
-            res.json({
-                success: true,
-                message: 'Food entry deleted'
-            });
-        } else {
-            res.status(404).json({ error: 'Food entry not found' });
-        }
+
+        console.log('Food entry deleted successfully:', entryId);
+        res.status(200).json({
+            success: true,
+            message: 'Food entry deleted',
+            error: ''
+        });
+
     } catch (error) {
         console.error('Delete food entry error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -111,6 +123,11 @@ exports.deleteFoodEntry = async (req, res) =>
 exports.getFoodDetails = async (req, res) =>
 {
     const { fdcId } = req.params;
+
+    if (!fdcId)
+    {
+        return res.status(400).json({ error: "FDC ID is required" });
+    }
     
     try
     {

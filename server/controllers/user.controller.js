@@ -6,13 +6,13 @@ const FoodEntry = require('../models/FoodEntry.js');
 
 exports.searchUser = async (req, res, next) =>
 {
+    const { q } = req.query;
+
+    if (!q) {
+        return res.status(400).json({ error: 'Search query is required' });
+    }
+
     try {
-        const { q } = req.query;
-
-        if (!q) {
-            return res.status(400).json({ error: 'Search query is required' });
-        }
-
         // Search by first name, last name, or email
         const users = await User.find({
             $or: [
@@ -33,7 +33,7 @@ exports.searchUser = async (req, res, next) =>
             profilePic: user.profilePic || null
         }));
 
-        res.json({ users: transformedUsers, error: '' });
+        res.status(200).json({ users: transformedUsers, error: '' });
     } catch (err) {
         console.error('User search error:', err);
         res.status(500).json({ error: 'Failed to search users' });
@@ -46,14 +46,24 @@ exports.uploadProfilePic = async (req, res, next) =>
 {
     try {
         const { userId } = req.params;
+        // const photoBase64 = req.file;
         const { photoBase64 } = req.body;
-        
+
+        if (!userId) {
+            return res.status(400).json({ error: "No userId provided" });
+        }
+
         if (!photoBase64) {
             return res.status(400).json({ error: 'No photo data provided' });
         }
 
-        // Upload to Cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(photoBase64, {
+        let updatedUser = await User.findById(userId);
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+         // Upload to Cloudinary
+         const uploadResponse = await cloudinary.uploader.upload(photoBase64, {// photoBase64.path, {
             folder: 'profile_pictures',
             transformation: [
                 { width: 400, height: 400, crop: 'fill', gravity: 'face' },
@@ -61,18 +71,15 @@ exports.uploadProfilePic = async (req, res, next) =>
             ]
         });
 
+
         // Update user's profile picture URL in database
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { profilePic: uploadResponse.secure_url },
+        updatedUser = await User.findOneAndUpdate(
+            { _id: userId},
+            { $set: {profilePic: uploadResponse.secure_url} },
             { new: true }
         );
 
-        if (!updatedUser) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        res.json({
+        res.status(200).json({
             message: 'Profile picture uploaded successfully',
             profilePicUrl: uploadResponse.secure_url,
             user: {
@@ -98,7 +105,13 @@ exports.deleteProfilePic =  async (req, res, next) =>
     try {
         const { userId } = req.params;
 
+        if (!userId)
+        {
+            return res.status(400).json({ error: "userId not provided" });
+        }
+
         const user = await User.findById(userId);
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -110,13 +123,13 @@ exports.deleteProfilePic =  async (req, res, next) =>
         }
 
         // Update user in database
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { profilePic: null },
+        const updatedUser = await User.findOneAndUpdate(
+            { _id: userId },
+            { $set: {profilePic: null} },
             { new: true }
         );
 
-        res.json({
+        res.status(200).json({
             message: 'Profile picture deleted successfully',
             user: {
                 id: updatedUser._id,
@@ -138,13 +151,19 @@ exports.deleteProfilePic =  async (req, res, next) =>
 // Get user profile (including profile picture)
 exports.getUser = async (req, res, next) => 
 {
+    const { userId } = req.params;
+
+    if (!userId)
+    {
+        return res.status(400).json({ error: "userId not provided" });
+    }
     try {
-        const user = await User.findById(req.params.userId).select('-password');
+        const user = await User.findById(userId).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        res.json({
+        res.status(200).json({
             user: {
                 id: user._id,
                 firstName: user.firstName,
@@ -167,21 +186,38 @@ exports.getUser = async (req, res, next) =>
 // Update user profile
 exports.updateUser = async (req, res, next) => 
 {
-    try {
-        const { userId } = req.params;
-        const { firstName, lastName, bio } = req.body;
+    const { userId } = req.params;
+    if (!userId)
+    {
+        return res.status(400).json({error: "userId not provided"});
+    }
+    
+    const { firstName, lastName, bio } = req.body;
+    if (!firstName || !lastName)
+    {
+        return res.status(400).json({error: "User details not provided"});
+    }
 
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { firstName, lastName, bio },
-            { new: true }
-        ).select('-password');
+    try {
+
+        // const updatedUser = await User.findByIdAndUpdate(
+        //     userId,
+        //     { firstName, lastName, bio },
+        //     { new: true }
+        // );
+        const updatedUser = await User.findById(userId).select('-password');
 
         if (!updatedUser) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        res.json({
+        await User.findOneAndUpdate(
+            { _id: userId },
+            { $set: {firstName, lastName, bio} },
+            { new: true }
+        );
+
+        res.status(200).json({
             message: 'Profile updated successfully',
             user: {
                 id: updatedUser._id,
@@ -205,6 +241,10 @@ exports.deleteUser = async (req, res, next) =>
 {
     try {
         const { userId } = req.params;
+        if (!userId)
+        {
+            return res.status(400).json({error: "userId not provided"});
+        }
 
         // Find user first to check if exists
         const user = await User.findById(userId);
@@ -226,7 +266,9 @@ exports.deleteUser = async (req, res, next) =>
             User.findByIdAndDelete(userId)
         ]);
 
-        res.json({ error: '', message: 'User and associated data deleted successfully' });
+        res.status(200).json({
+                    error: '', 
+                    message: 'User and associated data deleted successfully' });
     } catch (err) {
         console.error('Delete user error:', err);
         res.status(500).json({ error: 'Failed to delete user' });

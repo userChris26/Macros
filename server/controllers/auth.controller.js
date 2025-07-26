@@ -6,9 +6,9 @@ exports.register = async (req, res) =>
 {
 	// incoming: userEmail, userPassword, userFirstName, userLastName
 	// outgoing: error
-
+	
 	const { userEmail, userPassword, userFirstName, userLastName } = req.body;
-
+	
 	// Validate required fields
     if (!userEmail || !userPassword || !userFirstName || !userLastName)
     {
@@ -27,7 +27,7 @@ exports.register = async (req, res) =>
 		
 		if (result)
 		{
-			return res.status(200).json({ error: "Account Already Exists" });
+			return res.status(400).json({ error: "Account Already Exists" });
 		}
 
 		// Hash the password
@@ -65,7 +65,8 @@ exports.register = async (req, res) =>
 		ret = authEmails.sendVerifyEmail(userEmail, verifyToken);
 		if (ret && ret.error !== '')
 		{
-			throw new sendGridError;
+			console.log(ret.error);
+			throw new Error;
 		}
 	}
 	catch(e)
@@ -100,12 +101,12 @@ exports.login = async (req, res) =>
 	let hash = blake2.createHash('blake2b');
 	hash.update(Buffer.from(userPassword));
 
-	const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
 	try
 	{
+		const result = await User.findOne({ email: userEmail, password: hash.digest('hex') });
 		if (!result)
 		{
-			return res.status(200).json({ error: "Login/Password incorrect" });
+			return res.status(400).json({ error: "Login/Password incorrect" });
 		}
 
 		if (!result.isVerified)
@@ -150,6 +151,7 @@ exports.sendRecoveryEmail = async (req, res) =>
             required: ['email']
         });
     }
+
 	try {
 
 		// Find user by email
@@ -171,7 +173,8 @@ exports.sendRecoveryEmail = async (req, res) =>
 		});
 
 		// Save reset token to user
-		const updatedUser = await User.findByIdAndUpdate(
+		// const updatedUser = await User.findByIdAndUpdate(
+		await User.findByIdAndUpdate(
 			user._id,
 			{
 				resetToken,
@@ -180,11 +183,11 @@ exports.sendRecoveryEmail = async (req, res) =>
 			{ new: true }
 		);
 
-		console.log('Updated user with reset token:', {
-			email: updatedUser.email,
-			tokenSaved: updatedUser.resetToken === resetToken,
-			expiry: updatedUser.resetTokenExpiry.toISOString()
-		});
+		// console.log('Updated user with reset token:', {
+		// 	email: updatedUser.email,
+		// 	tokenSaved: updatedUser.resetToken === resetToken,
+		// 	expiry: updatedUser.resetTokenExpiry.toISOString()
+		// });
 
 		// Send email using SendGrid
 		const ret = authEmails.sendRecoveryEmail(email, resetToken);
@@ -192,6 +195,8 @@ exports.sendRecoveryEmail = async (req, res) =>
 		{
 			throw new sendGridError;
 		}
+
+		res.status(200).json({error: ''});
 	}
 	catch (err)
 	{
@@ -218,8 +223,8 @@ exports.recoverEmail = async (req, res) =>
         });
     }
 
-	try {
-		
+	try
+	{
 		// Hash the password
 		let hash = blake2.createHash('blake2b');
 		hash.update(Buffer.from(newPassword));
@@ -296,7 +301,7 @@ exports.sendVerificationEmail = async (req, res) =>
 			return res.status(200).json({ error: '' }); // Success response even if user not found
 		}
 
-		// Generate reset token (valid for 1 hour)
+		// Generate verification token (valid for 1 hour)
 		const verifyToken = require('crypto').randomBytes(32).toString('hex');
 		const verifyTokenExpiry = new Date(Date.now() + 3600000); // Create a proper Date object
 
@@ -374,7 +379,7 @@ exports.verifyEmail = async (req, res) =>
 			{
 				console.log('No user found with token');
 			}
-			return res.status(400).json({ error: 'Invalid or expired reset token' });
+			return res.status(400).json({ error: 'Invalid or expired verification token' });
 		}
 		console.log('Found user for email verification:', user.email);
 

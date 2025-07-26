@@ -1,14 +1,19 @@
 const jwt = require('jsonwebtoken');
+const express = require('express');
 
 module.exports = function (req, res, next)
 {
+
+    if (!req.headers || !req.headers['authorization'])
+    {
+        res.status(401).json({error: "Missing token from the 'Authorization' header"});
+        return;
+    }
+
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token)
-    {
-        return res.status(401).json({ error: 'Token not present' });
-    }
+    console.log(req);
 
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) =>
     {
@@ -22,4 +27,5 @@ module.exports = function (req, res, next)
         
         next();
     })
+
 }

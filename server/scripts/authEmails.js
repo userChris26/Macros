@@ -3,9 +3,14 @@ const emailConfig = require('../config/email');
 
 exports.sendVerifyEmail = async function(email, verifyToken)
 {
-    const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
-    let ret;
+    if (!email || !verifyToken)
+    {
+        return {error: "Missing required fields: email, verifyToken"};
+    }
 
+    let ret;
+    const verifyUrl = `${emailConfig.frontendUrl}/auth/verify-email?token=${verifyToken}`;
+    
     const msg = {
         to: email,
         from: emailConfig.senderEmail,
@@ -36,6 +41,12 @@ exports.sendVerifyEmail = async function(email, verifyToken)
 
 exports.sendRecoveryEmail = async function(email, resetToken)
 {
+
+    if (!email || !resetToken)
+    {
+        return {error: "Missing required fields: email, resetToken"};
+    }
+
     const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${resetToken}`;
     let ret;
 
@@ -69,6 +80,9 @@ exports.sendRecoveryEmail = async function(email, resetToken)
 
 exports.sendVerifiedConfirmationEmail = async function(email)
 {
+    if (!email) {
+        return {error: "Email not present"};
+    }
     const msg = {
         to: email,
         from: emailConfig.senderEmail,
@@ -91,10 +105,16 @@ exports.sendVerifiedConfirmationEmail = async function(email)
         console.error('Failed to send confirmation email:', emailError);
         // Don't return error to client - email was still verified successfully
     }
+
+    return { error: '' };
 }
 
 exports.sendRecoveredConfirmationEmail = async function(email)
 {
+    if (!email) {
+        return {error: "Email not present"}
+    }
+    
     const msg = {
         to: email,
         from: emailConfig.senderEmail,
@@ -114,4 +134,6 @@ exports.sendRecoveredConfirmationEmail = async function(email)
         console.error('Failed to send confirmation email:', emailError);
         // Don't return error to client - password was still reset successfully
     }
+
+    return { error: '' };
 }

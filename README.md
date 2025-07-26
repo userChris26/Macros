@@ -13,7 +13,7 @@ Macros is a social nutrition tracking platform that helps users monitor their ma
 - **USDA Food Database**: Search and add foods from the comprehensive USDA database
 - **Meal Categories**: Organize foods into breakfast, lunch, dinner, snacks, and water intake
 - **Custom Food Entries**: Add your own foods with detailed nutritional information
-- **Photo Sharing**: Upload pictures of your meals (coming soon)
+- **Photo Sharing**: Upload pictures of your meals
 - **Quick Add**: Save and reuse frequently eaten meals
 
 ### 👥 Social Features
@@ -21,7 +21,6 @@ Macros is a social nutrition tracking platform that helps users monitor their ma
 - **User Search**: Find and connect with other users easily
 - **Profile Management**: Customize your profile with pictures and bio
 - **Social Feed**: View and interact with your network's food entries (in development)
-- **Comments & Likes**: Engage with your network's posts (coming soon)
 
 ### 📱 User Experience
 - **Modern UI**: Beautiful and responsive interface built with shadcn/ui
@@ -46,7 +45,7 @@ Macros is a social nutrition tracking platform that helps users monitor their ma
 - **Express.js**: Web framework
 - **MongoDB**: NoSQL database
 - **JWT**: Secure authentication
-- **Cloudinary**: Image storage (coming soon)
+- **Cloudinary**: Image storage
 
 ### External APIs
 - **USDA API**: Comprehensive food database
@@ -73,7 +72,7 @@ npm install
 ```
 
 3. Set up environment variables
-Create `.env` files in both `server` and `client` directories:
+Create `.env` files in the `server` directory:
 
 ### Backend (.env)
 ```env
@@ -110,7 +109,6 @@ Currently implementing comprehensive testing:
 - Unit tests for components and utilities
 - Integration tests for API endpoints
 - End-to-end testing for critical user flows
-- Continuous Integration with GitHub Actions
 
 ## 📖 Development Guidelines
 
@@ -127,6 +125,7 @@ Currently implementing comprehensive testing:
 - Consistent naming conventions
 - Comprehensive error handling
 - Responsive design patterns
+- Unit testing on the API
 
 ## 🤝 Contributing
 
