@@ -1,4 +1,4 @@
-const { cloudinary } = require('../config/cloudinary.js');
+const { cloudinary, upload } = require('../config/cloudinary.js');
 const User = require('../models/User.js');
 const Meal = require('../models/Meal.js');
 const Network = require('../models/Network.js');
@@ -46,42 +46,32 @@ exports.uploadProfilePic = async (req, res, next) =>
 {
     try {
         const { userId } = req.params;
-        // const photoBase64 = req.file;
-        const { photoBase64 } = req.body;
+        const { path } = req.file;
 
         if (!userId) {
             return res.status(400).json({ error: "No userId provided" });
         }
 
-        if (!photoBase64) {
+        if (!path) {
             return res.status(400).json({ error: 'No photo data provided' });
         }
 
         let updatedUser = await User.findById(userId);
+
         if (!updatedUser) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
-         // Upload to Cloudinary
-         const uploadResponse = await cloudinary.uploader.upload(photoBase64, {// photoBase64.path, {
-            folder: 'profile_pictures',
-            transformation: [
-                { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-                { quality: 'auto', fetch_format: 'auto' }
-            ]
-        });
-
 
         // Update user's profile picture URL in database
         updatedUser = await User.findOneAndUpdate(
             { _id: userId},
-            { $set: {profilePic: uploadResponse.secure_url} },
+            { $set: {profilePic: path} },
             { new: true }
         );
 
         res.status(200).json({
             message: 'Profile picture uploaded successfully',
-            profilePicUrl: uploadResponse.secure_url,
+            profilePicUrl: path,
             user: {
                 id: updatedUser._id,
                 firstName: updatedUser.firstName,
