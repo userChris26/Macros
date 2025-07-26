@@ -100,4 +100,42 @@ class FoodLogService {
       throw Exception(data['error'] ?? 'Failed to delete food entry');
     }
   }
+
+  Future<String?> fetchMealPhoto(String userId, DateTime date, String mealType) async {
+    final token = await AuthService().getToken();
+    final url = Uri.parse('${ApiConstants.apiUrl}/meal/$userId/${date.toIso8601String().substring(0, 10)}/$mealType');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final meal = data['meal'];
+      return meal?['photo']?['url'];
+    }
+    return null;
+  }
+
+  Future<void> deleteMealPhoto(String userId, DateTime date, String mealType) async {
+    final token = await AuthService().getToken();
+    final response = await http.delete(
+      Uri.parse('${ApiConstants.apiUrl}/meal/photo'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'userId': userId,
+        'date': date.toIso8601String().substring(0, 10),
+        'mealType': mealType,
+      }),
+    );
+    final data = jsonDecode(response.body);
+    if (data['success'] != true) {
+      throw Exception(data['error'] ?? 'Failed to delete meal photo');
+    }
+  }
 } 

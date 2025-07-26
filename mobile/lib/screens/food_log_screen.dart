@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import '../services/food_log_service.dart';
 import '../services/auth_service.dart';
 import '../models/food_entry.dart';
@@ -8,7 +12,7 @@ import '../models/food_search_result.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/loading_widget.dart';
 import '../utils/validation.dart';
-import 'dart:convert';
+import '../constants/api_constants.dart';
 
 class FoodLogScreen extends StatefulWidget {
   const FoodLogScreen({Key? key}) : super(key: key);
@@ -22,6 +26,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
   bool loading = false;
   String? errorMessage;
   List<FoodEntry> foodEntries = [];
+  Map<String, String?> mealPhotos = {};
   
   // Add controllers for the form fields
   final TextEditingController foodNameController = TextEditingController();
@@ -58,11 +63,27 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
       }
       final service = FoodLogService();
       final mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
-      final futures = mealTypes.map((mealType) => service.fetchMealEntries(userId, selectedDate, mealType));
-      final results = await Future.wait(futures);
-      final entries = results.expand((e) => e).toList();
+      
+      // Fetch entries and photos in parallel
+      final entryFutures = mealTypes.map((mealType) => service.fetchMealEntries(userId, selectedDate, mealType));
+      final photoFutures = mealTypes.map((mealType) => service.fetchMealPhoto(userId, selectedDate, mealType));
+      
+      final entryResults = await Future.wait(entryFutures);
+      final photoResults = await Future.wait(photoFutures);
+      
+      // Combine all entries and collect photos
+      final entries = <FoodEntry>[];
+      final photos = <String, String?>{};
+      
+      for (int i = 0; i < mealTypes.length; i++) {
+        final mealType = mealTypes[i];
+        entries.addAll(entryResults[i]);
+        photos[mealType] = photoResults[i];
+      }
+      
       setState(() {
         foodEntries = entries;
+        mealPhotos = photos;
         loading = false;
       });
     } catch (e) {
@@ -396,6 +417,16 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Food Log'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () => Navigator.pushNamed(context, '/profile'),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -475,20 +506,82 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 8),
+                                    // Show meal photo or placeholder with integrated functionality
+                                    Container(
+                                      width: double.infinity,
+                                      height: 120,
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        color: Colors.grey[100],
+                                      ),
+                                      child: mealPhotos[meal] != null
+                                          ? Stack(
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  child: Image.network(
+                                                    mealPhotos[meal]!,
+                                                    width: double.infinity,
+                                                    height: double.infinity,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Container(
+                                                        color: Colors.grey[200],
+                                                        child: const Icon(Icons.broken_image, size: 40),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                                // Small delete button overlay
+                                                Positioned(
+                                                  top: 4,
+                                                  right: 4,
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red.withOpacity(0.9),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: IconButton(
+                                                      icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                                                      onPressed: () => _deleteMealPhoto(meal),
+                                                      padding: EdgeInsets.zero,
+                                                      constraints: const BoxConstraints(
+                                                        minWidth: 24,
+                                                        minHeight: 24,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : InkWell(
+                                              onTap: () => _addMealPhoto(meal),
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: Center(
+                                                child: Column(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.add_a_photo, size: 32, color: Colors.grey[400]),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'Add Photo',
+                                                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                    ),
                                     Row(
                                       children: [
-                                        OutlinedButton.icon(
-                                          icon: const Icon(Icons.photo_camera),
-                                          label: const Text('Add Photo'),
-                                          onPressed: () {
-                                            // TODO: Implement add photo
-                                          },
-                                        ),
-                                        const SizedBox(width: 8),
-                                        OutlinedButton.icon(
-                                          icon: const Icon(Icons.add),
-                                          label: const Text('Add Food'),
-                                          onPressed: () => _addFoodEntry(meal),
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            icon: const Icon(Icons.add),
+                                            label: const Text('Add Food'),
+                                            onPressed: () => _addFoodEntry(meal),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -545,5 +638,163 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
   String _capitalize(String s) {
     if (s.isEmpty) return s;
     return s[0].toUpperCase() + s.substring(1);
+  }
+
+  Future<void> _addMealPhoto(String mealType) async {
+    final ImagePicker picker = ImagePicker();
+    
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Image Source'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        await _uploadMealPhoto(image, mealType);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: $e')),
+      );
+    }
+  }
+
+  Future<void> _uploadMealPhoto(XFile image, String mealType) async {
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = await authService.getUserId();
+      if (userId == null) {
+        setState(() {
+          errorMessage = 'User not logged in.';
+          loading = false;
+        });
+        return;
+      }
+
+      // Convert image to base64
+      final bytes = await image.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final response = await http.post(
+        Uri.parse('${ApiConstants.apiUrl}/meal/photo'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${await authService.getToken()}',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'date': selectedDate.toIso8601String().substring(0, 10),
+          'mealType': mealType,
+          'photoBase64': 'data:image/jpeg;base64,$base64Image',
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Meal photo uploaded successfully!')),
+        );
+        // Refresh the food entries to show the new photo
+        _fetchEntries();
+      } else {
+        setState(() {
+          errorMessage = data['error'] ?? 'Failed to upload meal photo.';
+          loading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to upload meal photo: $e';
+        loading = false;
+      });
+    }
+  }
+
+  Future<void> _deleteMealPhoto(String mealType) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Photo'),
+        content: Text('Are you sure you want to delete the photo for $mealType?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = await authService.getUserId();
+      if (userId == null) {
+        setState(() {
+          errorMessage = 'User not logged in.';
+          loading = false;
+        });
+        return;
+      }
+
+      final service = FoodLogService();
+      await service.deleteMealPhoto(userId, selectedDate, mealType);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo deleted successfully!')),
+      );
+      
+      // Refresh the food entries to update the UI
+      _fetchEntries();
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to delete photo: $e';
+        loading = false;
+      });
+    }
   }
 } 
