@@ -192,10 +192,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'bio': bioController.text.trim(),
       });
       
-      print('Profile update request:');
-      print('URL: $url');
-      print('Body: $body');
-      
       final response = await http.put(
         Uri.parse(url),
         headers: {
@@ -204,10 +200,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
         body: body,
       );
-
-      print('Profile update response:');
-      print('Status: ${response.statusCode}');
-      print('Body: ${response.body}');
       
       final data = jsonDecode(response.body);
       

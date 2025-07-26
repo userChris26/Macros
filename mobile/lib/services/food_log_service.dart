@@ -17,8 +17,6 @@ class FoodLogService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
     );
-    print('Status: ${response.statusCode}');
-    print('Body: ${response.body}');
     final data = jsonDecode(response.body);
     if (data['success'] == true) {
       final foodsList = data['foods'] as List;
@@ -38,8 +36,6 @@ class FoodLogService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
     );
-    print('Meal fetch [$mealType] status: ${response.statusCode}');
-    print('Meal fetch [$mealType] body: ${response.body}');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final meal = data['meal'];
