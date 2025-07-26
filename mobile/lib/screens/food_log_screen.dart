@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import '../services/food_log_service.dart';
 import '../services/auth_service.dart';
 import '../models/food_entry.dart';
@@ -8,6 +12,7 @@ import '../models/food_search_result.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/loading_widget.dart';
 import '../utils/validation.dart';
+import '../constants/api_constants.dart';
 
 class FoodLogScreen extends StatefulWidget {
   const FoodLogScreen({Key? key}) : super(key: key);
@@ -21,6 +26,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
   bool loading = false;
   String? errorMessage;
   List<FoodEntry> foodEntries = [];
+  Map<String, String?> mealPhotos = {};
   
   // Add controllers for the form fields
   final TextEditingController foodNameController = TextEditingController();
@@ -56,9 +62,28 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
         return;
       }
       final service = FoodLogService();
-      final entries = await service.fetchFoodEntries(userId, selectedDate);
+      final mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+      
+      // Fetch entries and photos in parallel
+      final entryFutures = mealTypes.map((mealType) => service.fetchMealEntries(userId, selectedDate, mealType));
+      final photoFutures = mealTypes.map((mealType) => service.fetchMealPhoto(userId, selectedDate, mealType));
+      
+      final entryResults = await Future.wait(entryFutures);
+      final photoResults = await Future.wait(photoFutures);
+      
+      // Combine all entries and collect photos
+      final entries = <FoodEntry>[];
+      final photos = <String, String?>{};
+      
+      for (int i = 0; i < mealTypes.length; i++) {
+        final mealType = mealTypes[i];
+        entries.addAll(entryResults[i]);
+        photos[mealType] = photoResults[i];
+      }
+      
       setState(() {
         foodEntries = entries;
+        mealPhotos = photos;
         loading = false;
       });
     } catch (e) {
@@ -100,7 +125,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     }
   }
 
-  void _addFoodEntry() async {
+  void _addFoodEntry([String? mealType]) async {
     // Show a dialog to search for foods
     final searchQuery = await showDialog<String>(
       context: context,
@@ -166,7 +191,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
       final selectedFood = await showDialog<FoodSearchResult>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Select Food (${foods.length} results)'),
+          title: Text('Select Food ( ${foods.length} results)'),
           content: SizedBox(
             width: double.maxFinite,
             height: 300,
@@ -246,6 +271,32 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
           return;
         }
 
+        // Use provided mealType or prompt if not given
+        String selectedMealType = mealType ?? 'dinner';
+        if (mealType == null) {
+          final mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+          final pickedMealType = await showDialog<String>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Select Meal Type'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: mealTypes.map((type) => RadioListTile<String>(
+                  title: Text(type[0].toUpperCase() + type.substring(1)),
+                  value: type,
+                  groupValue: selectedMealType,
+                  onChanged: (value) {
+                    Navigator.pop(context, value);
+                  },
+                )).toList(),
+              ),
+            ),
+          );
+          if (pickedMealType != null) {
+            selectedMealType = pickedMealType;
+          }
+        }
+
         // Add the food entry to the backend
         try {
           final authService = Provider.of<AuthService>(context, listen: false);
@@ -257,7 +308,6 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
             });
             return;
           }
-          
           final servingSize = int.tryParse(servingSizeController.text);
           if (servingSize == null || servingSize <= 0) {
             setState(() {
@@ -266,14 +316,13 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
             });
             return;
           }
-
           await service.addFoodEntry(
             userId: userId,
-            fdcId: selectedFood.fdcId.toString(),
-            servingSize: servingSize,
+            fdcId: selectedFood.fdcId, // int
+            servingAmount: servingSize, // int
+            mealType: selectedMealType, // user picked or provided
             date: selectedDate,
           );
-          
           // Refresh the food entries
           _fetchEntries();
         } catch (e) {
@@ -345,9 +394,39 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
   Widget build(BuildContext context) {
     final isToday = DateFormat('yyyy-MM-dd').format(selectedDate) ==
         DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+    final mealLabels = {
+      'breakfast': 'Breakfast',
+      'lunch': 'Lunch',
+      'dinner': 'Dinner',
+      'snack': 'Snack',
+    };
+    // Group entries by meal type
+    Map<String, List<FoodEntry>> entriesByMeal = {
+      for (var meal in mealTypes) meal: [],
+    };
+    for (var entry in foodEntries) {
+      final meal = entry.mealType.toLowerCase();
+      if (entriesByMeal.containsKey(meal)) {
+        entriesByMeal[meal]!.add(entry);
+      }
+    }
+    // Helper to get total kcal for a meal
+    num mealCalories(String meal) => entriesByMeal[meal]!.fold(0, (sum, e) => sum + e.calories);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Food Log'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () => Navigator.pushNamed(context, '/profile'),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -397,57 +476,151 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            // Entries List
+            // Grouped Entries by Meal
             Expanded(
-              child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: loading
-                      ? const AppLoadingWidget(message: 'Loading food entries...')
-                      : errorMessage != null
-                          ? AppErrorWidget(
-                              message: errorMessage!,
-                              onRetry: _fetchEntries,
-                            )
-                          : foodEntries.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'No food entries for ${DateFormat('MMMM d, yyyy').format(selectedDate)}.' +
-                                        (isToday ? ' Click the + button to get started!' : ''),
-                                    style: TextStyle(color: Colors.grey[600]),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                )
-                              : ListView.separated(
-                                  itemCount: foodEntries.length,
-                                  separatorBuilder: (_, __) => const Divider(),
-                                  itemBuilder: (context, index) {
-                                    final entry = foodEntries[index];
-                                    return ListTile(
-                                      leading: const Icon(Icons.restaurant_menu),
-                                      title: Text(entry.foodName),
-                                      subtitle: Text(
-                                        '${entry.servingSize}g • ${entry.calories.toStringAsFixed(0)} kcal',
+              child: loading
+                  ? const AppLoadingWidget(message: 'Loading food entries...')
+                  : errorMessage != null
+                      ? AppErrorWidget(
+                          message: errorMessage!,
+                          onRetry: _fetchEntries,
+                        )
+                      : ListView.builder(
+                          itemCount: mealTypes.length,
+                          itemBuilder: (context, idx) {
+                            final meal = mealTypes[idx];
+                            final entries = entriesByMeal[meal]!;
+                            return Card(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(mealLabels[meal]!, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                        Text('${mealCalories(meal).toStringAsFixed(0)} kcal', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    // Show meal photo or placeholder with integrated functionality
+                                    Container(
+                                      width: double.infinity,
+                                      height: 120,
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        color: Colors.grey[100],
                                       ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete_outline),
-                                        onPressed: () => _deleteEntry(entry.id),
-                                      ),
-                                    );
-                                  },
+                                      child: mealPhotos[meal] != null
+                                          ? Stack(
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  child: Image.network(
+                                                    mealPhotos[meal]!,
+                                                    width: double.infinity,
+                                                    height: double.infinity,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Container(
+                                                        color: Colors.grey[200],
+                                                        child: const Icon(Icons.broken_image, size: 40),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                                // Small delete button overlay
+                                                Positioned(
+                                                  top: 4,
+                                                  right: 4,
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red.withOpacity(0.9),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: IconButton(
+                                                      icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                                                      onPressed: () => _deleteMealPhoto(meal),
+                                                      padding: EdgeInsets.zero,
+                                                      constraints: const BoxConstraints(
+                                                        minWidth: 24,
+                                                        minHeight: 24,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : InkWell(
+                                              onTap: () => _addMealPhoto(meal),
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: Center(
+                                                child: Column(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.add_a_photo, size: 32, color: Colors.grey[400]),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'Add Photo',
+                                                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            icon: const Icon(Icons.add),
+                                            label: const Text('Add Food'),
+                                            onPressed: () => _addFoodEntry(meal),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    entries.isEmpty
+                                        ? const Text('No food entries yet', style: TextStyle(color: Colors.grey))
+                                        : ListView.separated(
+                                            shrinkWrap: true,
+                                            physics: const NeverScrollableScrollPhysics(),
+                                            itemCount: entries.length,
+                                            separatorBuilder: (_, __) => const Divider(),
+                                            itemBuilder: (context, i) {
+                                              final entry = entries[i];
+                                              return ListTile(
+                                                title: Text(entry.foodName),
+                                                subtitle: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    if (entry.brandOwner != null && entry.brandOwner!.isNotEmpty)
+                                                      Text('${entry.brandName != null && entry.brandName!.isNotEmpty ? entry.brandName! + ' • ' : ''}${entry.brandOwner!}'),
+                                                    Text('${entry.servingSize} ${entry.servingSizeUnit} • ${entry.calories.toStringAsFixed(0)} kcal'),
+                                                  ],
+                                                ),
+                                                trailing: IconButton(
+                                                  icon: const Icon(Icons.delete_outline),
+                                                  onPressed: () => _deleteEntry(entry.id),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                  ],
                                 ),
-                ),
-              ),
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addFoodEntry,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Food Entry'),
-        tooltip: 'Add Food Entry',
       ),
     );
   }
@@ -460,5 +633,168 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
         Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     );
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
+  }
+
+  Future<void> _addMealPhoto(String mealType) async {
+    final ImagePicker picker = ImagePicker();
+    
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Image Source'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        await _uploadMealPhoto(image, mealType);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: $e')),
+      );
+    }
+  }
+
+  Future<void> _uploadMealPhoto(XFile image, String mealType) async {
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = await authService.getUserId();
+      if (userId == null) {
+        setState(() {
+          errorMessage = 'User not logged in.';
+          loading = false;
+        });
+        return;
+      }
+
+      // Convert image to base64
+      final bytes = await image.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final response = await http.post(
+        Uri.parse('${ApiConstants.apiUrl}/meal/photo'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${await authService.getToken()}',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'date': selectedDate.toIso8601String().substring(0, 10),
+          'mealType': mealType,
+          'photoBase64': 'data:image/jpeg;base64,$base64Image',
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Meal photo uploaded successfully!')),
+        );
+        // Refresh the food entries to show the new photo
+        _fetchEntries();
+      } else {
+        setState(() {
+          errorMessage = data['error'] ?? 'Failed to upload meal photo.';
+          loading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to upload meal photo: $e';
+        loading = false;
+      });
+    }
+  }
+
+  Future<void> _deleteMealPhoto(String mealType) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Photo'),
+        content: Text('Are you sure you want to delete the photo for $mealType?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = await authService.getUserId();
+      if (userId == null) {
+        setState(() {
+          errorMessage = 'User not logged in.';
+          loading = false;
+        });
+        return;
+      }
+
+      final service = FoodLogService();
+      await service.deleteMealPhoto(userId, selectedDate, mealType);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo deleted successfully!')),
+      );
+      
+      // Refresh the food entries to update the UI
+      _fetchEntries();
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to delete photo: $e';
+        loading = false;
+      });
+    }
   }
 } 

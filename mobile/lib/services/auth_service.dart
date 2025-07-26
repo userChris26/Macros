@@ -14,6 +14,7 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userEmail': email, 'userPassword': password}),
       );
+      
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['accessToken'];
