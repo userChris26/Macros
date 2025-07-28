@@ -46,6 +46,36 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     super.dispose();
   }
 
+    Drawer buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.black),
+            child: Text('Macros', style: TextStyle(color: Colors.white, fontSize: 24)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.rss_feed),
+            title: const Text('Social Feed'),
+            onTap: () => Navigator.pushReplacementNamed(context, '/social'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.restaurant),
+            title: const Text('Food Log'),
+            onTap: () => Navigator.pushReplacementNamed(context, '/food-log'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Profile'),
+            onTap: () => Navigator.pushReplacementNamed(context, '/profile'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   Future<void> _fetchEntries() async {
     setState(() {
       loading = true;
@@ -416,17 +446,49 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Food Log'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Logout',
+            onPressed: () async {
+              final authService = Provider.of<AuthService>(context, listen: false);
+              await authService.logout();
+              Navigator.pushReplacementNamed(context, '/');
+            },
           ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
+        ],        
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.white),
+              child: Text('Macros', 
+              style: TextStyle(
+                color: Colors.black, 
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.rss_feed),
+              title: const Text('Social Feed', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pushReplacementNamed(context, '/social')
+            ),
+            ListTile(
+              leading: const Icon(Icons.restaurant),
+              title: const Text('Food Log', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pushReplacementNamed(context, '/food-log'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pushReplacementNamed(context, '/profile'),
+            ),
+          ],
           ),
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
