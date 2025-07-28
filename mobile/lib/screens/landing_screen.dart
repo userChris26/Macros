@@ -19,16 +19,16 @@ class LandingScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 64),
 
-                // Macros Logo Banner
+                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset('assets/banner.png', height: 90), // Increased size
+                    Image.asset('assets/banner.png', height: 90), 
                   ],
                 ),
-                const SizedBox(height: 20), // line break-style space
+                const SizedBox(height: 20), 
 
-                // Tagline
+                
                 const Center(
                   child: Text(
                     'Track your nutrition and share\nyour journey with Macros',
@@ -39,7 +39,7 @@ class LandingScreen extends StatelessWidget {
 
                 const SizedBox(height: 48),
 
-                // Section Header
+                
                 const Text(
                   'Why Choose Macros?',
                   textAlign: TextAlign.center,
@@ -52,7 +52,7 @@ class LandingScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Feature Cards
+                
                 _buildFeatureCard(
                   icon: Icons.bar_chart,
                   title: 'Track Your Progress',
@@ -80,7 +80,7 @@ class LandingScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
 
-                // CTA Section
+                
                 const Text(
                   'Ready to Start Your Journey?',
                   textAlign: TextAlign.center,
@@ -111,7 +111,7 @@ class LandingScreen extends StatelessWidget {
               ],
             ),
 
-            // Top-right Sign In / Sign Up buttons
+            
             Positioned(
               top: 16,
               right: 16,

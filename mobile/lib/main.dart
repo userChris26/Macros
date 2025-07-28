@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/screens/sign_up_success_screen.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -66,6 +67,7 @@ class _MyAppState extends State<MyApp> {
           '/social': (context) => const SocialFeedScreen(),
           '/food-log': (context) => const FoodLogScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/signup-success' : (context) => const SignUpSuccessScreen(),
         },
       ),
     );
