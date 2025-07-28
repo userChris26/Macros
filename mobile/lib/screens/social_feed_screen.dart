@@ -199,62 +199,6 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   ),
 ),
 
-      /*builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-          left: 16,
-          right: 16,
-          top: 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _searchController,
-              onChanged: (val) => setState(() => _searchQuery = val),
-              onSubmitted: (_) => _searchUsers(),
-              decoration: InputDecoration(
-                hintText: 'Search users...',
-                /*suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: _searchUsers,
-                ),*/
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    setState(() => _searchQuery = _searchController.text.trim());
-                    _searchUsers();
-                  },
-                ),
-
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_searching)
-              const Center(child: CircularProgressIndicator())
-            else if (_searchResults.isEmpty)
-              const Text('No users found.')
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: _searchResults.length,
-                itemBuilder: (context, index) {
-                  final user = _searchResults[index];
-                  final alreadyFollowing = _following.any((u) => u['id'] == user['_id']);
-                  return ListTile(
-                    title: Text('${user['firstName']} ${user['lastName']}'),
-                    subtitle: Text(user['email']),
-                    trailing: ElevatedButton(
-                      onPressed: () => _followUser(user['_id']),
-                      child: Text(alreadyFollowing ? 'Unfollow' : 'Follow'),
-                    ),
-                  );
-                },
-              ),
-          ],
-        ),
-      ),*/
     );
   }
 
@@ -433,7 +377,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
           const Padding(
             padding: EdgeInsets.only(left: 16.0, top: 0, bottom: 8),
             child: Text(
-              'Recent Meals',
+              'Feed',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
