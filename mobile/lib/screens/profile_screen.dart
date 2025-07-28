@@ -1,3 +1,5 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
@@ -44,6 +46,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
     lastNameController.dispose();
     bioController.dispose();
     super.dispose();
+  }
+
+    Drawer buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.white),
+            child: Text('Macros', 
+            style: TextStyle(
+              color: Colors.black, 
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.rss_feed),
+            title: const Text('Social Feed', style: TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () => Navigator.pushReplacementNamed(context, '/social'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.restaurant),
+            title: const Text('Food Log', style: TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () => Navigator.pushReplacementNamed(context, '/food-log'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () => Navigator.pushReplacementNamed(context, '/profile'),
+          ),
+        ],
+      ),
+    );
+  }
+
+    @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Logout',
+            onPressed: () async {
+              final authService = Provider.of<AuthService>(context, listen: false);
+              await authService.logout();
+              Navigator.pushReplacementNamed(context, '/');
+            },
+          ),
+        ],
+      ),
+      drawer: buildDrawer(context),
+      body: loading
+          ? const AppLoadingWidget(message: 'Loading profile...')
+          : errorMessage != null
+              ? AppErrorWidget(
+                  message: errorMessage!,
+                  onRetry: _loadProfileData,
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadProfileData,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildProfileHeader(),
+                        const SizedBox(height: 24),
+                        _buildStats(),
+                        const SizedBox(height: 24),
+                        _buildProfileInformation(),
+                      ],
+                    ),
+                  ),
+                ),
+    );
   }
 
   Future<void> _loadProfileData() async {
@@ -344,48 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.restaurant_menu),
-            onPressed: () => Navigator.pushNamed(context, '/food-log'),
-          ),
-        ],
-      ),
-      body: loading
-          ? const AppLoadingWidget(message: 'Loading profile...')
-          : errorMessage != null
-              ? AppErrorWidget(
-                  message: errorMessage!,
-                  onRetry: _loadProfileData,
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadProfileData,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildProfileHeader(),
-                        const SizedBox(height: 24),
-                        _buildStats(),
-                        const SizedBox(height: 24),
-                        _buildProfileInformation(),
-                      ],
-                    ),
-                  ),
-                ),
-    );
-  }
+
 
   Widget _buildProfileHeader() {
     final firstName = userInfo?['firstName'] ?? '';
