@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../utils/validation.dart';
 import '../widgets/loading_widget.dart';
+import '../screens/sign_up_success_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -47,30 +48,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _register(BuildContext context) async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  setState(() {
+    _isLoading = true;
+    _errorMessage = null;
+  });
 
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final result = await authService.register(
-      _firstNameController.text,
-      _lastNameController.text,
-      _emailController.text,
-      _passwordController.text,
+  final authService = Provider.of<AuthService>(context, listen: false);
+  final error = await authService.register(
+    _emailController.text.trim(),
+    _passwordController.text.trim(),
+    _firstNameController.text.trim(),
+    _lastNameController.text.trim(),
+  );
+
+  setState(() => _isLoading = false);
+
+  if (error == null) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const SignUpSuccessScreen()),
     );
-
+  } else {
     setState(() {
-      _isLoading = false;
-      _errorMessage = result;
+      _errorMessage = error;
     });
-
-    if (result == null) {
-      Navigator.pushReplacementNamed(context, '/signup-success');
-    }
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {

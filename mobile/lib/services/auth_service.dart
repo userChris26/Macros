@@ -39,6 +39,7 @@ class AuthService {
     }
   }
 
+
   Future<String?> register(String email, String password, String firstName, String lastName) async {
     final url = Uri.parse(ApiConstants.registerEndpoint);
     try {
@@ -67,6 +68,9 @@ class AuthService {
       return 'An error occurred: $e';
     }
   }
+
+
+
 
   Future<void> logout() async {
     await _storage.delete(key: 'jwt'); // delete the JWT token
