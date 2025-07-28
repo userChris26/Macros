@@ -69,12 +69,12 @@ class _MyAppState extends State<MyApp> {
           '/social': (context) => const SocialFeedScreen(),
           '/food-log': (context) => const FoodLogScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/signup-success' : (context) => const SignUpSuccessScreen(),
+          '/forgot-password' : (context) => const ForgotPasswordScreen(),
           
           // Deep linking routes
           '/auth/verify-email': (context) => const LoginScreen(),
-          '/auth/reset-password': (context) => const LoginScreen(),
-          '/signup-success' : (context) => const SignUpSuccessScreen(),
-          '/forgot-password' : (context) => const ForgotPasswordScreen(),
+          '/auth/reset-password': (context) => const ForgotPasswordScreen(),
         },
       ),
     );
