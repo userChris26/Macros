@@ -63,6 +63,7 @@ class MyApp extends StatefulWidget {
 
   @override
   State<MyApp> createState() => _MyAppState();
+
 }
 
 class _MyAppState extends State<MyApp> {
@@ -112,6 +113,10 @@ class _MyAppState extends State<MyApp> {
           '/home': (context) => const HomeScreen(),
           '/food-log': (context) => const FoodLogScreen(),
           '/profile': (context) => const ProfileScreen(),
+          
+          // Deep linking routes
+          '/auth/verify-email': (context) => const LoginScreen(),
+          '/auth/reset-password': (context) => const LoginScreen(),
         },
       ),
     );
