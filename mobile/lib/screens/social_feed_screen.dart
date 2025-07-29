@@ -50,6 +50,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
         'firstName': item['followingId']['firstName'],
         'lastName': item['followingId']['lastName'],
         'email': item['followingId']['email'],
+        'profilePic': item['followingId']['profilePic'],
       };
     }).toList();
 
@@ -182,12 +183,11 @@ Future<void> _unfollowUser(String userIdToUnfollow) async {
   }
 }
 
-
 void _showFindFriendsModal() {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.black, // Set full black background
+    backgroundColor: Colors.black,
     showDragHandle: true,
     builder: (context) => SingleChildScrollView(
       padding: EdgeInsets.only(
@@ -253,6 +253,7 @@ void _showFindFriendsModal() {
                 final firstName = user['firstName'] ?? '';
                 final lastName = user['lastName'] ?? '';
                 final email = user['email'] ?? '';
+                final profilePic = user['profilePic'];
                 final userIdToCheck = user['_id'] ?? user['id'];
 
                 return StatefulBuilder(
@@ -275,13 +276,19 @@ void _showFindFriendsModal() {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.grey[800],
-                            child: Text(
-                              '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
+                          profilePic != null
+                              ? CircleAvatar(
+                                  radius: 20,
+                                  backgroundImage: NetworkImage(profilePic),
+                                )
+                              : CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.grey[800],
+                                  child: Text(
+                                    '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -349,8 +356,6 @@ void _showFindFriendsModal() {
 }
 
 
-
-
   Widget _macroColumn(String label, String value) {
     return Column(
       children: [
@@ -361,83 +366,102 @@ void _showFindFriendsModal() {
     );
   }
 
-  Widget _buildMealCard(dynamic meal) {
-  final user = meal['userData'];
-  final foods = List<Map<String, dynamic>>.from(meal['foods']);
-  final date = DateTime.parse(meal['date']);
-  final isToday = DateTime.now().toLocal().toString().split(' ')[0] == date.toLocal().toString().split(' ')[0];
-  final dateDisplay = isToday ? 'Today' : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][date.weekday % 7];
-  final mealType = meal['mealTime'].toString().capitalize();
 
-  final total = foods.fold<Map<String, double>>({
-    'calories': 0.0,
-    'protein': 0.0,
-    'carbs': 0.0,
-    'fat': 0.0,
-  }, (acc, food) {
-    final nutrients = food['nutrients'] as Map<String, dynamic>;
-    acc['calories'] = acc['calories']! + (nutrients['calories'] as num).toDouble();
-    acc['protein'] = acc['protein']! + (nutrients['protein'] as num).toDouble();
-    acc['carbs'] = acc['carbs']! + (nutrients['carbohydrates'] as num).toDouble();
-    acc['fat'] = acc['fat']! + (nutrients['fat'] as num).toDouble();
-    return acc;
-  });
+    Widget _buildMealCard(dynamic meal) {
+    final user = meal['userData'];
+    final foods = List<Map<String, dynamic>>.from(meal['foods']);
+    final date = DateTime.parse(meal['date']);
+    final isToday = DateTime.now().toLocal().toString().split(' ')[0] == date.toLocal().toString().split(' ')[0];
+    final dateDisplay = isToday ? 'Today' : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][date.weekday % 7];
+    final mealType = meal['mealTime'].toString().capitalize();
 
-  return Container(
-    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-    decoration: BoxDecoration(
-      color: Colors.black,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Color(0x1FFFFFFF), width: 1),
-    ),
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.grey[800],
-              radius: 20,
-              child: Text(
-                user['firstName'][0] + user['lastName'][0],
-                style: const TextStyle(color: Colors.white),
+    final total = foods.fold<Map<String, double>>({
+      'calories': 0.0,
+      'protein': 0.0,
+      'carbs': 0.0,
+      'fat': 0.0,
+    }, (acc, food) {
+      final nutrients = food['nutrients'] as Map<String, dynamic>;
+      acc['calories'] = acc['calories']! + (nutrients['calories'] as num).toDouble();
+      acc['protein'] = acc['protein']! + (nutrients['protein'] as num).toDouble();
+      acc['carbs'] = acc['carbs']! + (nutrients['carbohydrates'] as num).toDouble();
+      acc['fat'] = acc['fat']! + (nutrients['fat'] as num).toDouble();
+      return acc;
+    });
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Color(0x1FFFFFFF), width: 1),
+      ),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              user['profilePic'] != null
+                  ? CircleAvatar(
+                      radius: 20,
+                      backgroundImage: NetworkImage(user['profilePic']),
+                    )
+                  : CircleAvatar(
+                      backgroundColor: Colors.grey[800],
+                      radius: 20,
+                      child: Text(
+                        user['firstName'][0] + user['lastName'][0],
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${user['firstName']} ${user['lastName']}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.white)),
+                  Text('$dateDisplay • $mealType',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                ],
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (meal['photo'] != null && meal['photo']['url'] != null)
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                image: DecorationImage(
+                  image: NetworkImage(meal['photo']['url']),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${user['firstName']} ${user['lastName']}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white)),
-                Text('$dateDisplay • $mealType',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13)),
-              ],
-            )
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...foods.map((f) => Text(
-              '${f['description']} • ${f['servingAmount']} ${f['servingUnit']}',
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            )),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _macroColumn('Calories', '${total['calories']!.round()} kcal'),
-            _macroColumn('Protein', '${total['protein']!.toStringAsFixed(1)}g'),
-            _macroColumn('Carbs', '${total['carbs']!.toStringAsFixed(1)}g'),
-            _macroColumn('Fat', '${total['fat']!.toStringAsFixed(1)}g'),
-          ],
-        )
-      ],
-    ),
-  );
-}
+          ...foods.map((f) => Text(
+                '${f['description']} • ${f['servingAmount']} ${f['servingUnit']}',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              )),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _macroColumn('Calories', '${total['calories']!.round()} kcal'),
+              _macroColumn('Protein', '${total['protein']!.toStringAsFixed(1)}g'),
+              _macroColumn('Carbs', '${total['carbs']!.toStringAsFixed(1)}g'),
+              _macroColumn('Fat', '${total['fat']!.toStringAsFixed(1)}g'),
+            ],
+          )
+        ],
+      ),
+    );
+  }
 
 
   Drawer buildDrawer(BuildContext context) {
@@ -541,54 +565,66 @@ Widget build(BuildContext context) {
                           'You are not following anyone yet.',
                           style: TextStyle(color: Colors.white),
                         ),
-                      ..._following.map((user) => Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.04),
-                                  blurRadius: 8,
-                                  spreadRadius: 0,
-                                )
-                              ]
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.grey[800],
-                                  child: Text(
-                                    '${user['firstName'][0]}${user['lastName'][0]}',
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${user['firstName']} ${user['lastName']}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    Text(
-                                      user['email'],
-                                      style: TextStyle(
-                                        color: Colors.grey[400],
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          )),
+                        /// The rest of the code remains unchanged
+/// ...
+
+// Replace the _following.map section in your ListView with:
+..._following.map((user) => Container(
+  margin: const EdgeInsets.symmetric(vertical: 6),
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.black,
+    borderRadius: BorderRadius.circular(10),
+    border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.white.withOpacity(0.04),
+        blurRadius: 8,
+        spreadRadius: 0,
+      )
+    ]
+  ),
+  child: Row(
+    children: [
+      user['profilePic'] != null
+          ? CircleAvatar(
+              radius: 20,
+              backgroundImage: NetworkImage(user['profilePic']),
+            )
+          : CircleAvatar(
+              backgroundColor: Colors.grey[800],
+              radius: 20,
+              child: Text(
+                '${user['firstName'][0]}${user['lastName'][0]}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+      const SizedBox(width: 12),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${user['firstName']} ${user['lastName']}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+          Text(
+            user['email'],
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+)),
+
+
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.person_add),
