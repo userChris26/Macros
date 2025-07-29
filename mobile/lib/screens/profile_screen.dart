@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../constants/api_constants.dart';
@@ -382,21 +383,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      // Convert image to base64
-      final bytes = await image.readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      final response = await http.post(
+      // Create multipart request
+      final request = http.MultipartRequest(
+        'POST',
         Uri.parse('${ApiConstants.apiUrl}/upload-profile-pic/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${await authService.getToken()}',
-        },
-        body: jsonEncode({
-          'photoBase64': 'data:image/jpeg;base64,$base64Image',
-        }),
       );
 
+      // Add authorization header
+      final token = await authService.getToken();
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Add the image file
+      final bytes = await image.readAsBytes();
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'profilePic',
+          bytes,
+          filename: 'profile_picture.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['error'] == '') {

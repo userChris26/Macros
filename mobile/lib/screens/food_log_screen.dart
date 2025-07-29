@@ -269,8 +269,8 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
               TextField(
                 controller: servingSizeController,
                 decoration: const InputDecoration(
-                  labelText: 'Serving Size (grams)',
-                  hintText: '100',
+                  labelText: 'Serving Size (100g)',
+                  hintText: '3',
                 ),
                 keyboardType: TextInputType.number,
                 autofocus: true,
