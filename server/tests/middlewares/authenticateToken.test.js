@@ -35,7 +35,7 @@ describe("Authorization middleware", () => {
         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
     });
 
-    test("without 'authrozation' header", async () => {
+    test("without 'authorization' header", async () => {
         const expectedResponse = {
             status: 401,
             json: {

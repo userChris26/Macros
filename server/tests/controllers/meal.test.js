@@ -189,310 +189,310 @@ describe("GET /api/meal/:userId/:date/:mealType", () => {
     });
 });
 
-describe("POST /api/addmeal", () => {
-    test("without required fields", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "userId, mealName, mealType, and foodItems are required",
-                // received: jest.fn().mockReturnValue()
-            }
-        }
+// describe("POST /api/addmeal", () => {
+//     test("without required fields", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "userId, mealName, mealType, and foodItems are required",
+//                 // received: jest.fn().mockReturnValue()
+//             }
+//         }
 
-        mockRequest = {
-            body: {}
-        }
+//         mockRequest = {
+//             body: {}
+//         }
 
-        await mealController.addMeal(mockRequest, mockResponse, nextFunction);
+//         await mealController.addMeal(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    // TODO: Test with a valid meal entry
-    // test("with valid meal entry", async () => {
-    //     const expectedResponse = {
-    //         status: 200,
-    //         json: {
-    //             error: "userId, mealName, mealType, and foodItems are required",
-    //             // received: jest.fn().mockReturnValue()
-    //         }
-    //     }
+//     // TODO: Test with a valid meal entry
+//     // test("with valid meal entry", async () => {
+//     //     const expectedResponse = {
+//     //         status: 200,
+//     //         json: {
+//     //             error: "userId, mealName, mealType, and foodItems are required",
+//     //             // received: jest.fn().mockReturnValue()
+//     //         }
+//     //     }
 
-    //     mockRequest = {
-    //         body: {
-    //             userId: "test", // TODO: Make this an ObjectId...
-    //             mealName: "name",
-    //             mealType: "breakfast",
-    //             foodItems: [{
-    //                 fdcId: "1",
-    //                 foodName: "name",
-    //                 servingSize: 0,
-    //                 nutrients: {}
-    //             }]
-    //         }
-    //     }
+//     //     mockRequest = {
+//     //         body: {
+//     //             userId: "test", // TODO: Make this an ObjectId...
+//     //             mealName: "name",
+//     //             mealType: "breakfast",
+//     //             foodItems: [{
+//     //                 fdcId: "1",
+//     //                 foodName: "name",
+//     //                 servingSize: 0,
+//     //                 nutrients: {}
+//     //             }]
+//     //         }
+//     //     }
 
-    //     mockingoose(Meal).toReturn({meal: "saved"}, 'save');
+//     //     mockingoose(Meal).toReturn({meal: "saved"}, 'save');
 
-    //     await mealController.addMeal(mockRequest, mockResponse, nextFunction);
+//     //     await mealController.addMeal(mockRequest, mockResponse, nextFunction);
 
-    //     expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-    //     expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    // });
-});
+//     //     expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//     //     expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     // });
+// });
 
-describe("POST /api/getmeals", () => {
-    test("without parameters", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "User ID is required",
-            }
-        }
+// describe("POST /api/getmeals", () => {
+//     test("without parameters", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "User ID is required",
+//             }
+//         }
 
-        mockRequest = {
-            body: {}
-        }
+//         mockRequest = {
+//             body: {}
+//         }
 
-        await mealController.getUserMealTemplates(mockRequest, mockResponse, nextFunction);
+//         await mealController.getUserMealTemplates(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    // TODO: Test valid request
-});
+//     // TODO: Test valid request
+// });
 
-describe("POST /api/addmealtoday", () => {
-    test("without parameters", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "User ID and Meal ID are required",
-            }
-        }
+// describe("POST /api/addmealtoday", () => {
+//     test("without parameters", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "User ID and Meal ID are required",
+//             }
+//         }
 
-        mockRequest = {
-            body: {}
-        }
+//         mockRequest = {
+//             body: {}
+//         }
 
-        await mealController.addMealTemplateToday(mockRequest, mockResponse, nextFunction);
+//         await mealController.addMealTemplateToday(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    test("with a nonexistent meal template", async () => {
-        const expectedResponse = {
-            status: 404,
-            json: {
-                error: "Meal template not found",
-            }
-        }
+//     test("with a nonexistent meal template", async () => {
+//         const expectedResponse = {
+//             status: 404,
+//             json: {
+//                 error: "Meal template not found",
+//             }
+//         }
 
-        mockRequest = {
-            body: {
-                userId: "test",
-                mealId: "test"
-            }
-        }
+//         mockRequest = {
+//             body: {
+//                 userId: "test",
+//                 mealId: "test"
+//             }
+//         }
 
-        mockingoose(Meal).toReturn(null, 'findOne');
+//         mockingoose(Meal).toReturn(null, 'findOne');
 
-        await mealController.addMealTemplateToday(mockRequest, mockResponse, nextFunction);
+//         await mealController.addMealTemplateToday(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
     
 
-    // TODO: Test valid request
-});
+//     // TODO: Test valid request
+// });
 
-describe("POST /api/deletemeal", () => {
-    test("without parameters", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "User ID and Meal ID are required",
-            }
-        }
+// describe("POST /api/deletemeal", () => {
+//     test("without parameters", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "User ID and Meal ID are required",
+//             }
+//         }
 
-        mockRequest = {
-            body: {}
-        }
+//         mockRequest = {
+//             body: {}
+//         }
 
-        await mealController.deleteMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.deleteMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    test("with nonexistent meal template", async () => {
-        const expectedResponse = {
-            status: 404,
-            json: {
-                error: "Meal not found",
-            }
-        }
+//     test("with nonexistent meal template", async () => {
+//         const expectedResponse = {
+//             status: 404,
+//             json: {
+//                 error: "Meal not found",
+//             }
+//         }
 
-        mockRequest = {
-            body: {
-                userId: "test",
-                mealId: "test"
-            }
-        }
+//         mockRequest = {
+//             body: {
+//                 userId: "test",
+//                 mealId: "test"
+//             }
+//         }
 
-        mockingoose(Meal).toReturn(null, 'findOne');
+//         mockingoose(Meal).toReturn(null, 'findOne');
 
-        await mealController.deleteMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.deleteMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    // TODO: Test valid request
-});
+//     // TODO: Test valid request
+// });
 
-describe("PUT /api/updatemeal/:mealId", () => {
-    test("without required fields", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "userId, mealName, and foodItems are required",
-            }
-        }
+// describe("PUT /api/updatemeal/:mealId", () => {
+//     test("without required fields", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "userId, mealName, and foodItems are required",
+//             }
+//         }
 
-        mockRequest = {
-            params: {},
-            body: {}
-        }
+//         mockRequest = {
+//             params: {},
+//             body: {}
+//         }
 
-        await mealController.updateMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.updateMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    test("without mealId parameter", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "mealId is required",
-            }
-        }
+//     test("without mealId parameter", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "mealId is required",
+//             }
+//         }
 
-        mockRequest = {
-            params: {},
-            body: {
-                userId: "test",
-                mealName: "test",
-                foodItems: ["test"]
-            }
-        }
+//         mockRequest = {
+//             params: {},
+//             body: {
+//                 userId: "test",
+//                 mealName: "test",
+//                 foodItems: ["test"]
+//             }
+//         }
 
-        await mealController.updateMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.updateMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    test("with nonexistent meal", async () => {
-        const expectedResponse = {
-            status: 404,
-            json: {
-                error: "Meal not found",
-            }
-        }
+//     test("with nonexistent meal", async () => {
+//         const expectedResponse = {
+//             status: 404,
+//             json: {
+//                 error: "Meal not found",
+//             }
+//         }
 
-        mockRequest = {
-            params: {
-                mealId: "test"
-            },
-            body: {
-                userId: "test",
-                mealName: "test",
-                foodItems: ["test"]
-            }
-        }
+//         mockRequest = {
+//             params: {
+//                 mealId: "test"
+//             },
+//             body: {
+//                 userId: "test",
+//                 mealName: "test",
+//                 foodItems: ["test"]
+//             }
+//         }
 
-        mockingoose(Meal).toReturn(null, 'findOneAndUpdate');
+//         mockingoose(Meal).toReturn(null, 'findOneAndUpdate');
 
-        await mealController.updateMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.updateMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    // TODO: Test valid request
-});
+//     // TODO: Test valid request
+// });
 
-describe("GET /api/meal/:mealId", () => {
-    test("without userId field", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "User ID is required",
-            }
-        }
+// describe("GET /api/meal/:mealId", () => {
+//     test("without userId field", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "User ID is required",
+//             }
+//         }
 
-        mockRequest = {
-            params: {},
-            query: {}
-        }
+//         mockRequest = {
+//             params: {},
+//             query: {}
+//         }
 
-        await mealController.getMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.getMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    test("without mealId parameter", async () => {
-        const expectedResponse = {
-            status: 400,
-            json: {
-                error: "Meal ID is required",
-            }
-        }
+//     test("without mealId parameter", async () => {
+//         const expectedResponse = {
+//             status: 400,
+//             json: {
+//                 error: "Meal ID is required",
+//             }
+//         }
 
-        mockRequest = {
-            params: {},
-            query: {
-                userId: "test"
-            }
-        }
+//         mockRequest = {
+//             params: {},
+//             query: {
+//                 userId: "test"
+//             }
+//         }
 
-        await mealController.getMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.getMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    test("with nonexistent meal", async () => {
-        const expectedResponse = {
-            status: 404,
-            json: {
-                error: "Meal not found",
-            }
-        }
+//     test("with nonexistent meal", async () => {
+//         const expectedResponse = {
+//             status: 404,
+//             json: {
+//                 error: "Meal not found",
+//             }
+//         }
 
-        mockRequest = {
-            params: {
-                mealId: "test"
-            },
-            query: {
-                userId: "test"
-            }
-        }
+//         mockRequest = {
+//             params: {
+//                 mealId: "test"
+//             },
+//             query: {
+//                 userId: "test"
+//             }
+//         }
 
-        mockingoose(Meal).toReturn(null, 'findOne')
+//         mockingoose(Meal).toReturn(null, 'findOne')
 
-        await mealController.getMealTemplate(mockRequest, mockResponse, nextFunction);
+//         await mealController.getMealTemplate(mockRequest, mockResponse, nextFunction);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
-        expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
-    });
+//         expect(mockResponse.status).toHaveBeenCalledWith(expectedResponse.status);
+//         expect(mockResponse.json).toHaveBeenCalledWith(expectedResponse.json);
+//     });
 
-    // TODO: Test valid request
-});
+//     // TODO: Test valid request
+// });

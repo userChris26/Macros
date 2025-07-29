@@ -13,13 +13,13 @@ module.exports = function (req, res)
 
     const userData = jwt.decode(token, { complete: true });
     
-    createJWT.createToken({
+    res.json(createJWT.createToken({
         _id: userData.payload.userId,
         firstName: userData.payload.firstName,
         lastName: userData.payload.lastName,
         email: userData.payload.email,
         profilePic: userData.payload.profilePic,
         bio: userData.payload.bio
-    });
+    }));
 
 }

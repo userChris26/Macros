@@ -12,7 +12,7 @@ foodRoute.post('/api/deletefoodentry', foodController.deleteFoodEntry);
 foodRoute.get('/api/food/:fdcId', foodController.getFoodDetails);
 foodRoute.get('/api/searchfoods', foodController.searchFood);
 foodRoute.post('/api/addfood', foodController.addFood);
-foodRoute.get('/api/test-usda', foodController.testUSDA);
+// foodRoute.get('/api/test-usda', foodController.testUSDA);
 
 // foodRoute.use(refreshToken);
 

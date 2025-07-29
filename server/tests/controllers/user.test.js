@@ -111,7 +111,7 @@ describe("POST /api/upload-profile-pic/:userId", () => {
 
         mockRequest = {
             params: {},
-            body: {}
+            file: {}
         }
 
         await userController.uploadProfilePic(mockRequest, mockResponse, nextFunction);
@@ -132,7 +132,7 @@ describe("POST /api/upload-profile-pic/:userId", () => {
             params: {
                 userId: "valid"
             },
-            body: {}
+            file: {}
         }
 
         await userController.uploadProfilePic(mockRequest, mockResponse, nextFunction);
@@ -153,8 +153,8 @@ describe("POST /api/upload-profile-pic/:userId", () => {
             params: {
                 userId: "DNE"
             },
-            body: {
-                photoBase64: "photo"
+            file: {
+                path: "/"
             }
         }
 
@@ -181,8 +181,8 @@ describe("POST /api/upload-profile-pic/:userId", () => {
             params: {
                 userId: "exists"
             },
-            body: {
-                photoBase64: "photo"
+            file: {
+                path: "/"
             }
         }
         
