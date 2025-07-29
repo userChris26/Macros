@@ -36,7 +36,7 @@ class _MyAppState extends State<MyApp> {
     final authService = AuthService();
     final token = await authService.getToken();
     setState(() {
-      _initialRoute = (token != null) ? '/social' : '/';
+      _initialRoute = '/'; //Direct to Landing page
       _checkingAuth = false;
     });
   }
