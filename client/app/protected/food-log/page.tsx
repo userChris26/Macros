@@ -10,10 +10,18 @@ import { getApiUrl, decodeJWT } from '@/lib/utils';
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import { MealPhotoUpload } from '@/components/meal-photo-upload';
 
 interface FoodEntry {
@@ -83,6 +91,9 @@ const emptyDailyMacros: DailyMacros = {
 
 export default function FoodLogPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [foodToDelete, setFoodToDelete] = useState<{ id: string; mealType: MealType; description: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [macros, setMacros] = useState<DailyMacros>(emptyDailyMacros);
@@ -100,7 +111,13 @@ export default function FoodLogPage() {
     try {
       const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
       const newMeals: MealMap = {};
-      const newMacros: DailyMacros = { ...emptyDailyMacros };
+      const newMacros = {
+        total: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        breakfast: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        lunch: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        dinner: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        snack: { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      };
 
       await Promise.all(
         mealTypes.map(async (type) => {
@@ -112,24 +129,18 @@ export default function FoodLogPage() {
           if (data.success && data.meal) {
             newMeals[type] = data.meal;
             
-            // Calculate macros for this meal
+            // Calculate macros for this meal once
             data.meal.foods.forEach((food: FoodEntry) => {
-              const calories = food.nutrients.calories;
-              const protein = food.nutrients.protein;
-              const carbs = food.nutrients.carbohydrates;
-              const fat = food.nutrients.fat;
-
-              // Add to meal-specific totals
-              newMacros[type].calories += calories;
-              newMacros[type].protein += protein;
-              newMacros[type].carbs += carbs;
-              newMacros[type].fat += fat;
+              newMacros[type].calories += food.nutrients.calories;
+              newMacros[type].protein += food.nutrients.protein;
+              newMacros[type].carbs += food.nutrients.carbohydrates;
+              newMacros[type].fat += food.nutrients.fat;
 
               // Add to daily totals
-              newMacros.total.calories += calories;
-              newMacros.total.protein += protein;
-              newMacros.total.carbs += carbs;
-              newMacros.total.fat += fat;
+              newMacros.total.calories += food.nutrients.calories;
+              newMacros.total.protein += food.nutrients.protein;
+              newMacros.total.carbs += food.nutrients.carbohydrates;
+              newMacros.total.fat += food.nutrients.fat;
             });
           } else {
             newMeals[type] = null;
@@ -155,26 +166,33 @@ export default function FoodLogPage() {
     fetchMealData();
   }, [userId, selectedDate, fetchMealData]); // Now we can safely include fetchMealData
 
-  const handleDeleteEntry = async (entryId: string, mealType: string) => {
+  const handleDeleteEntry = async (foodId: string, mealType: MealType, description: string) => {
+    setFoodToDelete({ id: foodId, mealType, description });
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!foodToDelete) return;
+
     try {
-      const response = await fetch(`${getApiUrl()}/api/deletefoodentry`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, entryId }),
+      const response = await fetch(`${getApiUrl()}/api/deletefood/${foodToDelete.id}`, {
+        method: 'DELETE',
       });
 
       const data = await response.json();
+      
       if (data.success) {
-        await fetchMealData(); // Refresh all meal data
-        toast.success("Food entry deleted successfully");
+        toast.success('Food entry deleted');
+        fetchMealData(); // Refresh data
       } else {
-        toast.error(data.error || "Failed to delete food entry");
+        toast.error(data.error || 'Failed to delete food entry');
       }
     } catch (error) {
       console.error('Error deleting food entry:', error);
-      toast.error("Failed to delete food entry");
+      toast.error('Failed to delete food entry');
+    } finally {
+      setDeleteConfirmOpen(false);
+      setFoodToDelete(null);
     }
   };
 
@@ -185,6 +203,18 @@ export default function FoodLogPage() {
   const handleFoodAdded = () => {
     fetchMealData(); // Refresh data when food is added
     setIsDialogOpen(false); // Close the dialog
+  };
+
+  const handleAddFoodClick = (mealType: MealType) => {
+    setSelectedMealType(mealType);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setSelectedMealType(null);
+    }
   };
 
   const renderMealSection = (mealType: MealType) => {
@@ -236,7 +266,7 @@ export default function FoodLogPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteEntry(entry._id, mealType)}
+                      onClick={() => handleDeleteEntry(entry._id, mealType, entry.description)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -252,7 +282,7 @@ export default function FoodLogPage() {
               variant="outline"
               size="sm"
               className="w-full mt-4"
-              onClick={() => setIsDialogOpen(true)}
+              onClick={() => handleAddFoodClick(mealType)}
             >
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Food
@@ -314,13 +344,36 @@ export default function FoodLogPage() {
       </div>
 
       {/* Food Search Dialog */}
-      <FoodSearchDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        userId={userId || ''}
-        date={formattedDate}
-        onFoodAdded={handleFoodAdded} // Add callback for when food is added
-      />
+      {selectedMealType && (
+        <FoodSearchDialog
+          open={isDialogOpen}
+          onOpenChange={handleDialogClose}
+          userId={userId || ''}
+          date={formattedDate}
+          onFoodAdded={handleFoodAdded}
+          mealType={selectedMealType}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Food Entry</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{foodToDelete?.description}&quot; from {foodToDelete?.mealType}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

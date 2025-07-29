@@ -13,8 +13,9 @@ interface FoodSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
-  date?: string; // optional date, defaults to today
-  onFoodAdded?: () => void; // callback when food is added successfully
+  date?: string;
+  onFoodAdded?: () => void;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
 }
 
 interface SearchResult {
@@ -43,7 +44,7 @@ interface FoodDetails {
   };
 }
 
-export function FoodSearchDialog({ open, onOpenChange, userId, date, onFoodAdded }: FoodSearchDialogProps) {
+export function FoodSearchDialog({ open, onOpenChange, userId, date, onFoodAdded, mealType }: FoodSearchDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +91,7 @@ export function FoodSearchDialog({ open, onOpenChange, userId, date, onFoodAdded
     }
   };
 
-  const handleAddFood = async (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+  const handleAddFood = async () => {
     if (!selectedFood) return;
 
     try {
@@ -132,7 +133,7 @@ export function FoodSearchDialog({ open, onOpenChange, userId, date, onFoodAdded
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Search Foods</DialogTitle>
+          <DialogTitle>Add Food to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}</DialogTitle>
         </DialogHeader>
 
         {/* Search Input */}
@@ -213,38 +214,14 @@ export function FoodSearchDialog({ open, onOpenChange, userId, date, onFoodAdded
           </div>
         )}
 
-        {/* Meal Type Buttons */}
+        {/* Add Food Button */}
         {selectedFood && (
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <Button
-              onClick={() => handleAddFood('breakfast')}
-              variant="outline"
-              className="w-full"
-            >
-              Add to Breakfast
-            </Button>
-            <Button
-              onClick={() => handleAddFood('lunch')}
-              variant="outline"
-              className="w-full"
-            >
-              Add to Lunch
-            </Button>
-            <Button
-              onClick={() => handleAddFood('dinner')}
-              variant="outline"
-              className="w-full"
-            >
-              Add to Dinner
-            </Button>
-            <Button
-              onClick={() => handleAddFood('snack')}
-              variant="outline"
-              className="w-full"
-            >
-              Add to Snack
-            </Button>
-          </div>
+          <Button
+            className="w-full mt-4"
+            onClick={handleAddFood}
+          >
+            Add to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+          </Button>
         )}
       </DialogContent>
     </Dialog>

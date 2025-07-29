@@ -72,6 +72,15 @@ export default function ProfilePage() {
           return;
         }
 
+        // Update form data with fetched user data
+        setFormData(prev => ({
+          ...prev,
+          firstName: userData.user.firstName,
+          lastName: userData.user.lastName,
+          email: userData.user.email,
+          bio: userData.user.bio || ''
+        }));
+
         // Combine user data with stats
         setProfile({
           userId: decoded.userId,
@@ -106,7 +115,11 @@ export default function ProfilePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          bio: formData.bio || null  // Ensure bio is null if empty
+        })
       });
 
       const data = await response.json();
@@ -124,6 +137,15 @@ export default function ProfilePage() {
         email: data.user.email,
         bio: data.user.bio
       } : null);
+
+      // Update form data to match
+      setFormData(prev => ({
+        ...prev,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        email: data.user.email,
+        bio: data.user.bio || ''
+      }));
       
       toast.success('Profile updated successfully');
     } catch (error) {
@@ -138,6 +160,47 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // Compress as JPEG with 0.8 quality
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (error) => reject(error);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !profile) return;
@@ -148,19 +211,37 @@ export default function ProfilePage() {
       return;
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
+    // Validate file size (10MB limit for original file)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
       return;
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('profilePic', file);
 
     try {
+      // Compress image before upload
+      const compressedBase64 = await compressImage(file);
+      
+      // Convert base64 to blob
+      const base64Response = await fetch(compressedBase64);
+      const compressedBlob = await base64Response.blob();
+      
+      // Create a File from the Blob
+      const compressedFile = new File([compressedBlob], file.name, {
+        type: 'image/jpeg'
+      });
+
+      // Check compressed size
+      if (compressedFile.size > 5 * 1024 * 1024) {
+        throw new Error('Compressed image is still too large. Please try a smaller image.');
+      }
+
       const token = Cookies.get('jwtToken');
       if (!token) return;
+
+      const formData = new FormData();
+      formData.append('profilePic', compressedFile);
 
       const response = await fetch(`${getApiUrl()}/api/upload-profile-pic/${profile.userId}`, {
         method: 'POST',
@@ -186,7 +267,7 @@ export default function ProfilePage() {
       toast.success('Profile picture updated successfully');
     } catch (error) {
       console.error('Error uploading profile picture:', error);
-      toast.error('Failed to upload profile picture');
+      toast.error(error instanceof Error ? error.message : 'Failed to upload profile picture');
     } finally {
       setIsUploading(false);
     }

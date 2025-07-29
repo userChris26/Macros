@@ -1,5 +1,4 @@
 import { AuthButton } from "@/components/auth-button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Sidebar } from "@/components/ui/sidebar";
 
 export default function ProtectedLayout({
@@ -21,7 +20,6 @@ export default function ProtectedLayout({
       <div className="flex-1 flex flex-col min-h-screen">
         <header className="flex h-14 items-center gap-4 border-b px-4 py-2">
           <div className="flex-1" />
-          <ThemeSwitcher />
           <AuthButton />
         </header>
         

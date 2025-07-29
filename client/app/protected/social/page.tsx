@@ -211,16 +211,16 @@ export default function SocialPage() {
                         </div>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm">
-                          {meal.userData.firstName[0]}
-                          {meal.userData.lastName[0]}
+                          {meal.userData.firstName[0].toUpperCase()}
+                          {meal.userData.lastName[0].toUpperCase()}
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">
                           {meal.userData.firstName} {meal.userData.lastName}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {dateDisplay} • {new Date(meal.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <p className="text-sm text-muted-foreground truncate">
+                          {dateDisplay}
                           {' • '}
                           {meal.mealTime.charAt(0).toUpperCase() + meal.mealTime.slice(1)}
                         </p>
@@ -311,15 +311,15 @@ export default function SocialPage() {
                         </div>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                          {user.firstName[0]}
-                          {user.lastName[0]}
+                          {user.firstName[0].toUpperCase()}
+                          {user.lastName[0].toUpperCase()}
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">
                           {user.firstName} {user.lastName}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground truncate" title={user.email}>
                           {user.email}
                         </p>
                       </div>
