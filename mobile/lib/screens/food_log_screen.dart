@@ -46,34 +46,46 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     super.dispose();
   }
 
-    Drawer buildDrawer(BuildContext context) {
+
+  Drawer buildDrawer(BuildContext context) {
     return Drawer(
+      backgroundColor: Colors.white,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           const DrawerHeader(
             decoration: BoxDecoration(color: Colors.black),
-            child: Text('Macros', style: TextStyle(color: Colors.white, fontSize: 24)),
+            child: Text('Macros',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           ListTile(
-            leading: const Icon(Icons.rss_feed),
-            title: const Text('Social Feed'),
+            leading: const Icon(Icons.rss_feed, color: Colors.white),
+            title: const Text('Social Feed', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
             onTap: () => Navigator.pushReplacementNamed(context, '/social'),
           ),
           ListTile(
-            leading: const Icon(Icons.restaurant),
-            title: const Text('Food Log'),
+            leading: const Icon(Icons.restaurant, color: Colors.white),
+            title: const Text('Food Log', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
             onTap: () => Navigator.pushReplacementNamed(context, '/food-log'),
           ),
           ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
+            leading: const Icon(Icons.person, color: Colors.white),
+            title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
             onTap: () => Navigator.pushReplacementNamed(context, '/profile'),
           ),
         ],
       ),
     );
   }
+
+  
+
+  
 
 
   Future<void> _fetchEntries() async {
@@ -445,7 +457,10 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     num mealCalories(String meal) => entriesByMeal[meal]!.fold(0, (sum, e) => sum + e.calories);
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
@@ -459,32 +474,33 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
         ],        
       ),
       drawer: Drawer(
+        backgroundColor: Colors.black,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.white),
+              decoration: BoxDecoration(color: Colors.black),
               child: Text('Macros', 
               style: TextStyle(
-                color: Colors.black, 
+                color: Colors.white, 
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.rss_feed),
-              title: const Text('Social Feed', style: TextStyle(fontWeight: FontWeight.bold)),
+              leading: const Icon(Icons.rss_feed, color: Colors.white),
+              title: const Text('Social Feed', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               onTap: () => Navigator.pushReplacementNamed(context, '/social')
             ),
             ListTile(
-              leading: const Icon(Icons.restaurant),
-              title: const Text('Food Log', style: TextStyle(fontWeight: FontWeight.bold)),
+              leading: const Icon(Icons.restaurant, color: Colors.white),
+              title: const Text('Food Log', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               onTap: () => Navigator.pushReplacementNamed(context, '/food-log'),
             ),
             ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+              leading: const Icon(Icons.person, color: Colors.white),
+              title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               onTap: () => Navigator.pushReplacementNamed(context, '/profile'),
             ),
           ],
@@ -500,12 +516,15 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
               children: [
                 Text(
                   'Food Log',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(width: 16),
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.calendar_today, size: 18),
-                  label: Text(DateFormat('MMMM d, yyyy').format(selectedDate)),
+                  icon: const Icon(Icons.calendar_today, size: 18, color: Colors.white),
+                  label: Text(
+                    DateFormat('MMMM d, yyyy').format(selectedDate),
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   onPressed: _pickDate,
                 ),
               ],
@@ -513,7 +532,10 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
             const SizedBox(height: 16),
             // Macros Summary Card
             Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              color: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.white.withOpacity(0.12)),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -521,16 +543,18 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                   children: [
                     Text(
                       isToday ? "Today's Macros" : "${DateFormat('MMMM d').format(selectedDate)}'s Macros",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color:Colors.white),
                     ),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _macroColumn('Calories', totalMacros['calories']!.toStringAsFixed(0)),
-                        _macroColumn('Protein', '${totalMacros['protein']!.toStringAsFixed(1)}g'),
-                        _macroColumn('Carbs', '${totalMacros['carbs']!.toStringAsFixed(1)}g'),
-                        _macroColumn('Fat', '${totalMacros['fat']!.toStringAsFixed(1)}g'),
+                        _macroColumn('Calories', totalMacros['calories']!.toStringAsFixed(0), color: Colors.white),
+                        _macroColumn('Protein', '${totalMacros['protein']!.toStringAsFixed(1)}g', color: Colors.white),
+                        _macroColumn('Carbs', '${totalMacros['carbs']!.toStringAsFixed(1)}g', color: Colors.white),
+                        _macroColumn('Fat', '${totalMacros['fat']!.toStringAsFixed(1)}g', color: Colors.white),
+
+                        
                       ],
                     ),
                   ],
@@ -553,7 +577,9 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                             final meal = mealTypes[idx];
                             final entries = entriesByMeal[meal]!;
                             return Card(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              color: Colors.black, 
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: Colors.white.withOpacity(0.12)),),
                               margin: const EdgeInsets.only(bottom: 16),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
@@ -563,8 +589,8 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(mealLabels[meal]!, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                        Text('${mealCalories(meal).toStringAsFixed(0)} kcal', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        Text(mealLabels[meal]!, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+                                        Text('${mealCalories(meal).toStringAsFixed(0)} kcal', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -640,8 +666,12 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                                       children: [
                                         Expanded(
                                           child: OutlinedButton.icon(
-                                            icon: const Icon(Icons.add),
-                                            label: const Text('Add Food'),
+                                            style: OutlinedButton.styleFrom(
+                                              side: BorderSide(color: Colors.white.withOpacity(0.12)),
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            icon: const Icon(Icons.add, color: Colors.white),
+                                            label: const Text('Add Food', style: TextStyle(color: Colors.white)),
                                             onPressed: () => _addFoodEntry(meal),
                                           ),
                                         ),
@@ -649,7 +679,7 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     entries.isEmpty
-                                        ? const Text('No food entries yet', style: TextStyle(color: Colors.grey))
+                                        ? const Text('No food entries yet', style: TextStyle(color: Colors.white60))
                                         : ListView.separated(
                                             shrinkWrap: true,
                                             physics: const NeverScrollableScrollPhysics(),
@@ -658,17 +688,22 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
                                             itemBuilder: (context, i) {
                                               final entry = entries[i];
                                               return ListTile(
-                                                title: Text(entry.foodName),
+                                                title: Text(
+                                                  entry.foodName,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  )),
                                                 subtitle: Column(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
                                                     if (entry.brandOwner != null && entry.brandOwner!.isNotEmpty)
-                                                      Text('${entry.brandName != null && entry.brandName!.isNotEmpty ? entry.brandName! + ' • ' : ''}${entry.brandOwner!}'),
-                                                    Text('${entry.servingSize} ${entry.servingSizeUnit} • ${entry.calories.toStringAsFixed(0)} kcal'),
+                                                      Text('${entry.brandName != null && entry.brandName!.isNotEmpty ? entry.brandName! + ' • ' : ''}${entry.brandOwner!}', style: TextStyle(color: Colors.grey)),
+                                                    Text('${entry.servingSize} ${entry.servingSizeUnit} • ${entry.calories.toStringAsFixed(0)} kcal', style: TextStyle(color: Colors.grey)),
                                                   ],
                                                 ),
                                                 trailing: IconButton(
-                                                  icon: const Icon(Icons.delete_outline),
+                                                  icon: const Icon(Icons.delete_outline, color: Colors.white),
                                                   onPressed: () => _deleteEntry(entry.id),
                                                 ),
                                               );
@@ -687,12 +722,12 @@ class _FoodLogScreenState extends State<FoodLogScreen> {
     );
   }
 
-  Widget _macroColumn(String label, String value) {
+  Widget _macroColumn(String label, String value, {Color color = Colors.white}) {
     return Column(
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
       ],
     );
   }
