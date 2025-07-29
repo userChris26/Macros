@@ -2,6 +2,13 @@ const defaultUrl = process.env.NODE_ENV === 'production'
   ? 'https://cop4331iscool.xyz'
   : 'http://localhost:3000';
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#000000',
+};
+
 export const metadata = {
   metadataBase: new URL(defaultUrl),
   title: "Macros - Social Nutrition Tracker",
@@ -24,10 +31,4 @@ export const metadata = {
     title: 'Macros - Social Nutrition Tracker',
     description: 'Track and share your daily macro intake',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: '#000000',
 }; 

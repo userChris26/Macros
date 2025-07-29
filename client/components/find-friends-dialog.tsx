@@ -162,7 +162,7 @@ export function FindFriendsDialog() {
           Find Friends
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Find Friends</DialogTitle>
           <DialogDescription>
@@ -185,57 +185,61 @@ export function FindFriendsDialog() {
           </Button>
         </div>
         
-        <div className="space-y-2">
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center justify-between p-2 rounded-lg border"
-            >
-              <div className="flex items-center gap-3">
-                <Avatar size="sm">
-                  {user.profilePic ? (
-                    <AvatarImage src={user.profilePic} alt={`${user.firstName}'s profile`} />
-                  ) : (
-                    <AvatarFallback>
-                      {user.firstName[0]}
-                      {user.lastName[0]}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div>
-                  <p className="font-medium">
-                    {user.firstName} {user.lastName}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
-              </div>
-              <Button
-                variant={followingStatus[user.id] ? "secondary" : "default"}
-                size="sm"
-                onClick={() => followingStatus[user.id] 
-                  ? handleUnfollow(user.id)
-                  : handleFollow(user.id)
-                }
+        <div className="overflow-y-auto pr-2 -mr-2">
+          <div className="space-y-2">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center justify-between p-2 rounded-lg border"
               >
-                {followingStatus[user.id] ? (
-                  <>
-                    <UserMinus2 className="mr-2 h-4 w-4" />
-                    Unfollow
-                  </>
-                ) : (
-                  <>
-                    <UserPlus2 className="mr-2 h-4 w-4" />
-                    Follow
-                  </>
-                )}
-              </Button>
-            </div>
-          ))}
-          {users.length === 0 && !isLoading && (
-            <p className="text-center text-muted-foreground">
-              No users found. Try searching for someone!
-            </p>
-          )}
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar size="sm">
+                    {user.profilePic ? (
+                      <AvatarImage src={user.profilePic} alt={`${user.firstName}'s profile`} />
+                    ) : (
+                      <AvatarFallback>
+                        {user.firstName[0].toUpperCase()}
+                        {user.lastName[0].toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate" title={user.email}>
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant={followingStatus[user.id] ? "secondary" : "default"}
+                  size="sm"
+                  onClick={() => followingStatus[user.id] 
+                    ? handleUnfollow(user.id)
+                    : handleFollow(user.id)
+                  }
+                >
+                  {followingStatus[user.id] ? (
+                    <>
+                      <UserMinus2 className="mr-2 h-4 w-4" />
+                      Unfollow
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus2 className="mr-2 h-4 w-4" />
+                      Follow
+                    </>
+                  )}
+                </Button>
+              </div>
+            ))}
+            {users.length === 0 && !isLoading && (
+              <p className="text-center text-muted-foreground py-4">
+                No users found. Try searching for someone!
+              </p>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
