@@ -20,7 +20,7 @@ Macros is a social nutrition tracking platform that helps users monitor their ma
 - **User Following**: Connect with other users and follow their nutrition journey
 - **User Search**: Find and connect with other users easily
 - **Profile Management**: Customize your profile with pictures and bio
-- **Social Feed**: View and interact with your network's food entries (in development)
+- **Social Feed**: View and interact with your network's food entries
 
 ### 📱 User Experience
 - **Modern UI**: Beautiful and responsive interface built with shadcn/ui
@@ -37,7 +37,7 @@ Macros is a social nutrition tracking platform that helps users monitor their ma
 - **shadcn/ui**: Beautiful and accessible UI components
 - **Tailwind CSS**: Utility-first styling
 - **Lucide Icons**: Modern icon set
-- **React Query**: Data fetching and caching (coming soon)
+- **React Query**: Data fetching and caching
 - **Flutter**: Mobile app development
 
 ### Backend
@@ -97,7 +97,7 @@ cd client
 npm run dev
 ```
 
-## 📱 Mobile App (Coming Soon)
+## 📱 Mobile App
 - Flutter implementation in development
 - Cross-platform support
 - Native-like experience
