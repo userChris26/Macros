@@ -400,7 +400,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'profilePic',
           bytes,
           filename: 'profile_picture.jpg',
-          contentType: const MediaType('image', 'jpeg'),
+          contentType: MediaType('image', 'jpeg'),
         ),
       );
 
